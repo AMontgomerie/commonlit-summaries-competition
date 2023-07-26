@@ -34,7 +34,7 @@ def main(
         max_length=max_length,
         learning_rate=learning_rate,
         train_batch_size=train_batch_size,
-        valid_batch_size=valid_batch_size,
+        eval_batch_size=valid_batch_size,
     )
     trainer.train(epochs)
 
