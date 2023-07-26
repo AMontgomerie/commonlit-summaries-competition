@@ -25,6 +25,7 @@ class Trainer:
         self.model = AutoModelForSequenceClassification.from_pretrained(
             model_checkpoint, num_labels=1
         )
+        self.model_checkpoint = model_checkpoint
         self.model.to("cuda")
         self.train_dataset = train_dataset
         self.eval_dataset = eval_dataset
