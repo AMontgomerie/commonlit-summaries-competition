@@ -1,0 +1,1 @@
+# commonlit-summaries-competition
