@@ -21,8 +21,8 @@ def main(
     epochs: int = typer.Option(1, "--epochs"),
 ):
     data = load_data(data_dir)
-    train_data = data.loc[data.prompt_id != fold]
-    valid_data = data.loc[data.prompt_id == fold]
+    train_data = data.loc[data.prompt_id != fold].reset_index(drop=True)
+    valid_data = data.loc[data.prompt_id == fold].reset_index(drop=True)
     tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
     train_dataset = SummaryDataset(tokenizer, train_data, prediction_type)
     valid_dataset = SummaryDataset(tokenizer, valid_data, prediction_type)
