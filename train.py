@@ -30,7 +30,7 @@ def main(
         fold=fold,
         model_checkpoint=model_checkpoint,
         train_dataset=train_dataset,
-        valid_dataset=valid_dataset,
+        eval_dataset=valid_dataset,
         max_length=max_length,
         learning_rate=learning_rate,
         train_batch_size=train_batch_size,
