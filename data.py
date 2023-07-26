@@ -1,11 +1,11 @@
-import enum
+from enum import Enum
 import pandas as pd
 from pathlib import Path
 import torch
 from transformers import AutoTokenizer
 
 
-class PredictionType(enum):
+class PredictionType(Enum):
     content = "Content"
     wording = "Wording"
 
