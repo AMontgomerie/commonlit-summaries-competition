@@ -22,11 +22,12 @@ def main(
     data = load_data(data_dir, train=False)
     model = Model(model_checkpoint, max_length)
     all_predictions = {"content": [], "wording": []}
+    model_weights_files = [f for f in os.listdir(weights_dir) if f.endswith(".bin")]
 
-    for filename in [f for f in os.listdir(weights_dir) if f.endswith(".bin")]:
+    for filename in model_weights_files:
         path = weights_dir / filename
-        model.load_weights(path)
         prediction_type = PredictionType.content if "content" in filename else "wording"
+        model.load_weights(path)
         predictions = model.predict(data, prediction_type, batch_size)
         all_predictions[prediction_type].append(predictions)
 
