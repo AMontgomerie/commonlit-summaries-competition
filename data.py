@@ -32,6 +32,7 @@ class SummaryDataset:
             label = sample.content if self.type == PredictionType.content else sample.wording
             inputs["labels"] = torch.tensor(label, dtype=torch.float32)
 
+        inputs = {k: v.squeeze(dim=0) for k, v in inputs}
         return inputs
 
 
