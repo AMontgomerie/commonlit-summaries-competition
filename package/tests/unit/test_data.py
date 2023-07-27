@@ -3,9 +3,9 @@ from pathlib import Path
 import pytest
 from unittest.mock import Mock
 
-from commonlit_summaries.data import SummaryDataset, PredictionType
+from commonlit_summaries.data import SummaryDataset, PredictionType, load_data
 
-DATA_DIR = Path(__file__).parent / "data"
+DATA_DIR = Path(__file__).parents[1] / "data"
 
 
 @pytest.fixture
@@ -55,3 +55,30 @@ def test_create_train_dataset(mock_tokenizer: Mock, mock_data: pd.DataFrame):
     assert isinstance(inputs["input_ids"], list)
     assert isinstance(inputs["attention_mask"], list)
     assert len(inputs["input_ids"]) == len(inputs["attention_mask"])
+
+
+def test_load_test_data():
+    data = load_data(DATA_DIR, train=False)
+
+    for column in ["student_id", "prompt_id", "prompt_question", "text"]:
+        assert column in data.columns
+
+    for column in ["content", "wording"]:
+        assert column not in data.columns
+
+    assert len(data) > 0
+
+
+def test_load_train_data():
+    data = load_data(DATA_DIR, train=True)
+    for column in [
+        "student_id",
+        "prompt_id",
+        "prompt_question",
+        "text",
+        "content",
+        "wording",
+    ]:
+        assert column in data.columns
+
+    assert len(data) > 0
