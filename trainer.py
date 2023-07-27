@@ -36,7 +36,10 @@ class Trainer:
         self.eval_batch_size = eval_batch_size
         self.dataloader_num_workers = 2
         self.collator = DataCollatorWithPadding(
-            train_dataset.tokenizer, max_length=max_length, return_tensors="pt"
+            train_dataset.tokenizer,
+            padding="max_length",
+            max_length=max_length,
+            return_tensors="pt",
         )
         self.optimizer = AdamW(self.model.parameters(), lr=learning_rate)
         self.train_loss = AverageMeter()

@@ -14,7 +14,7 @@ class Model:
         self.model = self.model.to("cuda")
         self.model.eval()
         self.collator = DataCollatorWithPadding(
-            self.tokenizer, max_length=max_length, return_tensors="pt"
+            self.tokenizer, padding="max_length", max_length=max_length, return_tensors="pt"
         )
 
     def load_weights(self, weights_file: str) -> None:
