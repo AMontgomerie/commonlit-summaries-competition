@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "commonlit_summaries"
+version = "1.0"
+dependencies = ["pandas", "torch", "transformers", "typer"]
+
+[tool.setuptools.packages.find]
+exclude = ["tests"]
+
+[tool.setuptools.package-data]
+mlops = ["settings.toml"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "flake8",
+    "flake8-pyproject",
+    "black",
+]
+
+[tool.black]
+exclude = '(\.eggs|\.git|build|dist)'
+include = '.*(?<!version)\.pyi?$'
+line-length = 100
+target-version = ['py39']
+
+[tool.flake8]
+ignore = [
+    "E203", # whitespace before ':'
+    "W503", # Line break before binary operator
+]
+exclude = [".git", "__pycache__", "build", "dist", ".eggs"]
+max-complexity = 10
+max-line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+junit_family = "xunit1"
+filterwarnings = ["ignore::DeprecationWarning"]
