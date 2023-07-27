@@ -2,9 +2,9 @@ from pathlib import Path
 from transformers import AutoTokenizer
 import typer
 
-from data import PredictionType, SummaryDataset, load_data
-from trainer import Trainer
-from utils import set_seed
+from commonlit_summaries.data import PredictionType, SummaryDataset, load_data
+from commonlit_summaries.trainer import Trainer
+from commonlit_summaries.utils import set_seed
 
 app = typer.Typer(add_completion=False)
 

@@ -4,8 +4,8 @@ import pandas as pd
 from pathlib import Path
 import typer
 
-from data import load_data
-from inference import Model
+from commonlit_summaries.data import load_data
+from commonlit_summaries.inference import Model
 
 app = typer.Typer(add_completion=False)
 

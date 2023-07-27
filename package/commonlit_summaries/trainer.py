@@ -6,8 +6,8 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModelForSequenceClassification, DataCollatorWithPadding
 
-from data import PredictionType
-from utils import AverageMeter
+from commonlit_summaries.data import PredictionType
+from commonlit_summaries.utils import AverageMeter
 
 
 class Trainer:
@@ -22,14 +22,16 @@ class Trainer:
         learning_rate: float,
         train_batch_size: int,
         eval_batch_size: int,
+        device: str = "cuda",
     ):
+        self.device = device
         self.prediction_type = prediction_type
         self.fold = fold
         self.model = AutoModelForSequenceClassification.from_pretrained(
             model_checkpoint, num_labels=1
         )
         self.model_checkpoint = model_checkpoint
-        self.model.to("cuda")
+        self.model.to(self.device)
         self.train_dataset = train_dataset
         self.eval_dataset = eval_dataset
         self.train_batch_size = train_batch_size
@@ -66,7 +68,7 @@ class Trainer:
         )
         with tqdm(total=len(train_loader), unit="batches") as tepoch:
             for batch in train_loader:
-                batch = {k: v.to("cuda") for k, v in batch.items()}
+                batch = {k: v.to(self.device) for k, v in batch.items()}
                 self.optimizer.zero_grad(set_to_none=True)
                 loss = self._model_fn(batch)
                 self.train_loss.update(loss.item(), self.train_batch_size)
@@ -86,7 +88,7 @@ class Trainer:
 
         with tqdm(total=len(eval_loader), unit="batches") as tepoch:
             for batch in eval_loader:
-                batch = {k: v.to("cuda") for k, v in batch.items()}
+                batch = {k: v.to(self.device) for k, v in batch.items()}
                 loss = self._model_fn(batch)
                 eval_loss.update(loss.item(), self.eval_batch_size)
                 tepoch.set_postfix({"eval_loss": eval_loss.avg})
