@@ -24,13 +24,9 @@ class Model:
 
     @torch.no_grad()
     def predict(
-        self,
-        data: pd.DataFrame,
-        prediction_type: PredictionType,
-        batch_size: int,
-        dataloader_num_workers: int = 2,
+        self, data: pd.DataFrame, batch_size: int, dataloader_num_workers: int = 2
     ) -> pd.DataFrame:
-        dataset = SummaryDataset(self.tokenizer, data, prediction_type)
+        dataset = SummaryDataset(self.tokenizer, data)
         dataloader = DataLoader(
             dataset,
             batch_size=batch_size,

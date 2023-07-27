@@ -12,7 +12,10 @@ class PredictionType(Enum):
 
 class SummaryDataset:
     def __init__(
-        self, tokenizer: AutoTokenizer, data: pd.DataFrame, prediction_type: PredictionType
+        self,
+        tokenizer: AutoTokenizer,
+        data: pd.DataFrame,
+        prediction_type: PredictionType | None = None,
     ):
         self.tokenizer = tokenizer
         self.data = data
@@ -24,8 +27,11 @@ class SummaryDataset:
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         sample = self.data.loc[index]
         inputs = self.tokenizer(sample.prompt_question, sample.text, truncation=True)
-        label = sample.content if self.type == PredictionType.content else sample.wording
-        inputs["labels"] = torch.tensor(label, dtype=torch.float32)
+
+        if self.type:
+            label = sample.content if self.type == PredictionType.content else sample.wording
+            inputs["labels"] = torch.tensor(label, dtype=torch.float32)
+
         return inputs
 
 

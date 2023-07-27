@@ -26,9 +26,9 @@ def main(
 
     for filename in model_weights_files:
         path = weights_dir / filename
-        prediction_type = PredictionType.content if "content" in filename else "wording"
         model.load_weights(path)
-        predictions = model.predict(data, prediction_type, batch_size)
+        predictions = model.predict(data, batch_size)
+        prediction_type = PredictionType.content if "content" in filename else "wording"
         all_predictions[prediction_type].append(predictions)
 
     mean_content_predictions = np.mean(all_predictions["content"], axis=0)
