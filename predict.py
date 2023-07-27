@@ -13,7 +13,7 @@ app = typer.Typer(add_completion=False)
 @app.command()
 def main(
     model_checkpoint: str = typer.Option(..., "--checkpoint"),
-    weights_dir: Path = typer.Option(..., "--weights"),
+    weights_dir: Path = typer.Option(..., "--weights-dir"),
     data_dir: Path = typer.Option("./", "--data-dir"),
     output_dir: Path = typer.Option("./", "--output-dir"),
     max_length: int = typer.Option(512, "--max-length"),
