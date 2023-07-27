@@ -23,7 +23,7 @@ def main(
     model = Model(model_checkpoint, max_length)
     all_predictions = {"content": [], "wording": []}
 
-    for filename in os.listdir(weights_dir):
+    for filename in [f for f in os.listdir(weights_dir) if f.endswith(".bin")]:
         path = weights_dir / filename
         model.load_weights(path)
         prediction_type = PredictionType.content if "content" in filename else "wording"
