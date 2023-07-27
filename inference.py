@@ -7,11 +7,12 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification, Data
 from data import SummaryDataset, PredictionType
 
 
-class Model(torch.nn.Module):
+class Model:
     def __init__(self, checkpoint: str, max_length: int):
         self.tokenizer = AutoTokenizer.from_pretrained(checkpoint)
         self.model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels=1)
         self.model = self.model.to("cuda")
+        self.model.eval()
         self.collator = DataCollatorWithPadding(
             self.tokenizer, max_length=max_length, return_tensors="pt"
         )
