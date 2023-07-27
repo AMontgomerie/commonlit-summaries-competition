@@ -111,6 +111,6 @@ class Trainer:
 
     def _save(self, fold: str, epoch: int) -> None:
         model_name = self.model_checkpoint.replace("/", "_")
-        file_name = f"{model_name}-{self.prediction_type}-fold-{fold}-epoch-{epoch}.bin"
+        file_name = f"{model_name}-{self.prediction_type.value}-fold-{fold}-epoch-{epoch}.bin"
         save_path = os.path.join(self.save_dir, file_name)
         torch.save(self.model.state_dict(), save_path)
