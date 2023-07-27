@@ -34,5 +34,10 @@ def load_data(data_dir: Path, train: bool = True):
     prompts = pd.read_csv(data_dir / f"prompts_{split}.csv")
     summaries = pd.read_csv(data_dir / f"summaries_{split}.csv")
     data = summaries.merge(prompts, on="prompt_id")
-    data = data.loc[:, ["student_id", "prompt_id", "prompt_question", "text", "content", "wording"]]
+    columns = ["student_id", "prompt_id", "prompt_question", "text"]
+
+    if train:
+        columns += ["content", "wording"]
+
+    data = data.loc[:, columns]
     return data
