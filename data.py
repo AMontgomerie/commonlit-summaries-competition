@@ -29,9 +29,10 @@ class SummaryDataset:
         return inputs
 
 
-def load_data(data_dir: Path):
-    prompts = pd.read_csv(data_dir / "prompts_train.csv")
-    summaries = pd.read_csv(data_dir / "summaries_train.csv")
+def load_data(data_dir: Path, train: bool = True):
+    split = "train" if train else "test"
+    prompts = pd.read_csv(data_dir / f"prompts_{split}.csv")
+    summaries = pd.read_csv(data_dir / f"summaries_{split}.csv")
     data = summaries.merge(prompts, on="prompt_id")
-    data = data.loc[:, ["prompt_id", "prompt_question", "text", "content", "wording"]]
+    data = data.loc[:, ["student_id", "prompt_id", "prompt_question", "text", "content", "wording"]]
     return data
