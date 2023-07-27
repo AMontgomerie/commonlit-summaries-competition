@@ -27,6 +27,7 @@ def main(
     train_dataset = SummaryDataset(tokenizer, train_data, prediction_type)
     valid_dataset = SummaryDataset(tokenizer, valid_data, prediction_type)
     trainer = Trainer(
+        prediction_type=prediction_type,
         fold=fold,
         model_checkpoint=model_checkpoint,
         train_dataset=train_dataset,

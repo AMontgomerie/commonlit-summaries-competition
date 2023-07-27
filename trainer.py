@@ -6,12 +6,14 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModelForSequenceClassification, DataCollatorWithPadding
 
+from data import PredictionType
 from utils import AverageMeter
 
 
 class Trainer:
     def __init__(
         self,
+        prediction_type: PredictionType,
         fold: str,
         model_checkpoint: str,
         train_dataset: Dataset,
@@ -21,6 +23,7 @@ class Trainer:
         train_batch_size: int,
         eval_batch_size: int,
     ):
+        self.prediction_type = prediction_type
         self.fold = fold
         self.model = AutoModelForSequenceClassification.from_pretrained(
             model_checkpoint, num_labels=1
@@ -108,8 +111,6 @@ class Trainer:
 
     def _save(self, fold: str, epoch: int) -> None:
         model_name = self.model_checkpoint.replace("/", "_")
-        file_name = (
-            f"{model_name}-{self.train_dataset.prediction_type}-fold-{fold}-epoch-{epoch}.bin"
-        )
+        file_name = f"{model_name}-{self.prediction_type}-fold-{fold}-epoch-{epoch}.bin"
         save_path = os.path.join(self.save_dir, file_name)
         torch.save(self.model.state_dict(), save_path)
