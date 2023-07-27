@@ -29,7 +29,7 @@ def main(
         model.load_weights(path)
         predictions = model.predict(data, batch_size)
         prediction_type = PredictionType.content if "content" in filename else "wording"
-        all_predictions[prediction_type].append(predictions)
+        all_predictions[prediction_type.value].append(predictions)
 
     mean_content_predictions = np.mean(all_predictions["content"], axis=0)
     mean_wording_predictions = np.mean(all_predictions["wording"], axis=0)
