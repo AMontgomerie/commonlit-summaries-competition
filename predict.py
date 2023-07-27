@@ -17,7 +17,7 @@ def main(
     data_dir: Path = typer.Option("./", "--data-dir"),
     output_dir: Path = typer.Option("./", "--output-dir"),
     max_length: int = typer.Option(512, "--max-length"),
-    batch_size: int = typer.Option(32, "--api-key"),
+    batch_size: int = typer.Option(32, "--batch-size"),
 ):
     data = load_data(data_dir, train=False)
     model = Model(model_checkpoint, max_length)
