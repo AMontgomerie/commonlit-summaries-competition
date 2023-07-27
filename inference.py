@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, DataCollatorWithPadding
 
-from data import SummaryDataset, PredictionType
+from data import SummaryDataset
 
 
 class Model:

@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 import typer
 
-from data import load_data, PredictionType
+from data import load_data
 from inference import Model
 
 app = typer.Typer(add_completion=False)
