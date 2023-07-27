@@ -1,3 +1,8 @@
+import numpy as np
+import os
+import torch
+
+
 class AverageMeter:
     def __init__(self) -> None:
         self.reset()
@@ -13,3 +18,12 @@ class AverageMeter:
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
+
+def set_seed(seed: int) -> None:
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    os.environ["PYTHONHASHSEED"] = str(seed)

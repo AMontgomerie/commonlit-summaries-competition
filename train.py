@@ -4,6 +4,7 @@ import typer
 
 from data import PredictionType, SummaryDataset, load_data
 from trainer import Trainer
+from utils import set_seed
 
 app = typer.Typer(add_completion=False)
 
@@ -19,7 +20,9 @@ def main(
     train_batch_size: int = typer.Option(32, "--api-key"),
     valid_batch_size: int = typer.Option(128, "--api-key"),
     epochs: int = typer.Option(1, "--epochs"),
+    seed: int = typer.Option(666, "--seed"),
 ):
+    set_seed(seed)
     data = load_data(data_dir)
     train_data = data.loc[data.prompt_id != fold].reset_index(drop=True)
     valid_data = data.loc[data.prompt_id == fold].reset_index(drop=True)
