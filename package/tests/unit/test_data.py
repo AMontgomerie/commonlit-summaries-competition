@@ -3,22 +3,22 @@ from pathlib import Path
 import pytest
 from unittest.mock import Mock
 
-from commonlit_summaries.data import SummaryDataset
+from commonlit_summaries.data import SummaryDataset, PredictionType
 
 DATA_DIR = Path(__file__).parent / "data"
 
 
 @pytest.fixture
 def mock_tokenizer() -> Mock:
-    def mock_tokenize(text1: str, text2: str, truncation: bool) -> dict[str, list[int]]:
-        num_tokens = len(text1.split()) + len(text2.split())
-        return {
-            "input_ids": [i for i in range(num_tokens)],
-            "attention_mask": [1 for _ in range(num_tokens)],
-        }
+    class MockTokenizer:
+        def __call__(self, text1: str, text2: str, truncation: bool) -> dict[str, list[int]]:
+            num_tokens = len(text1.split()) + len(text2.split())
+            return {
+                "input_ids": [i for i in range(num_tokens)],
+                "attention_mask": [1 for _ in range(num_tokens)],
+            }
 
-    tokenizer = Mock
-    tokenizer.__call__ = mock_tokenize
+    return MockTokenizer()
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def mock_data() -> pd.DataFrame:
 
 
 def test_create_inference_dataset(mock_tokenizer: Mock, mock_data: pd.DataFrame):
-    dataset = SummaryDataset(mock_tokenizer, mock_data, train=False)
+    dataset = SummaryDataset(mock_tokenizer, mock_data)
     inputs = dataset[0]
     assert "input_ids" in inputs
     assert "attention_mask" in inputs
@@ -47,7 +47,7 @@ def test_create_inference_dataset(mock_tokenizer: Mock, mock_data: pd.DataFrame)
 
 
 def test_create_train_dataset(mock_tokenizer: Mock, mock_data: pd.DataFrame):
-    dataset = SummaryDataset(mock_tokenizer, mock_data)
+    dataset = SummaryDataset(mock_tokenizer, mock_data, prediction_type=PredictionType.content)
     inputs = dataset[0]
     assert "input_ids" in inputs
     assert "attention_mask" in inputs
