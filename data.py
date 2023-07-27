@@ -6,8 +6,8 @@ from transformers import AutoTokenizer
 
 
 class PredictionType(Enum):
-    content = "Content"
-    wording = "Wording"
+    content = "content"
+    wording = "wording"
 
 
 class SummaryDataset:
