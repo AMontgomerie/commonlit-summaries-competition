@@ -41,7 +41,7 @@ def main(
         }
     )
     output_filename = model_checkpoint.replace("/", "-")
-    predictions_df.to_csv(output_dir / output_filename, index=False)
+    predictions_df.to_csv(output_dir / f"{output_filename}-submission.csv", index=False)
 
 
 if __name__ == "__main__":
