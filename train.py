@@ -16,9 +16,9 @@ def main(
     model_checkpoint: str = typer.Option(..., "--checkpoint"),
     data_dir: Path = typer.Option("./", "--data-dir"),
     max_length: int = typer.Option(512, "--max-length"),
-    learning_rate: float = typer.Option(1e-5, "--api-key"),
-    train_batch_size: int = typer.Option(32, "--api-key"),
-    valid_batch_size: int = typer.Option(128, "--api-key"),
+    learning_rate: float = typer.Option(1e-5, "--learning-rate"),
+    train_batch_size: int = typer.Option(32, "--train-batch-size"),
+    valid_batch_size: int = typer.Option(128, "--valid-batch-size"),
     epochs: int = typer.Option(1, "--epochs"),
     seed: int = typer.Option(666, "--seed"),
 ):
