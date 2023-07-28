@@ -6,7 +6,7 @@ import torch
 from commonlit_summaries.inference import Model
 from commonlit_summaries.data import load_data
 
-DATA_DIR = Path(__file__).parents[1] / "data"
+DATA_DIR = Path(__file__).parents[3] / "data"
 
 
 @pytest.fixture
