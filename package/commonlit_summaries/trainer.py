@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from tqdm import tqdm
 import torch
 from torch.cuda import amp
@@ -42,16 +43,12 @@ class Trainer:
         self.save_dir = "./"
 
     def train(self, epochs: int) -> AutoModelForSequenceClassification:
-        loss_per_epoch = []
-
         for epoch in range(epochs):
             print(f"Epoch {epoch}")
             self._train_epoch()
-            eval_loss = self._evaluate()
+            mse_loss = self._evaluate()
+            print(f"Epoch: {epoch} | MSE: {mse_loss} | RMSE: {np.sqrt(mse_loss)}")
             self._save(self.fold, epoch)
-            loss_per_epoch.append(eval_loss)
-
-        print(loss_per_epoch)
 
     def _train_epoch(self):
         self.model.train()
