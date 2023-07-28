@@ -16,20 +16,35 @@ class SummaryDataset:
         tokenizer: AutoTokenizer,
         data: pd.DataFrame,
         prediction_type: PredictionType | None = None,
+        fix_length: int | None = None,
     ):
         self.tokenizer = tokenizer
         self.data = data
         self.type = prediction_type
+        self.fix_length = fix_length
 
     def __len__(self) -> int:
         return len(self.data)
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         sample = self.data.loc[index]
-        inputs = self.tokenizer(
-            sample.prompt_question, sample.text, truncation=True, return_tensors="pt"
-        )
-        inputs = {k: v.squeeze(dim=0) for k, v in inputs.items()}
+
+        # If we're not using a data collator then we can do truncation, padding, and conversion to
+        # tensors here.
+        if self.fix_length:
+            inputs = self.tokenizer(
+                sample.prompt_question,
+                sample.text,
+                truncation=True,
+                max_length=self.fix_length,
+                padding="max_length",
+                return_tensors="pt",
+            )
+            inputs = {k: v.squeeze(dim=0) for k, v in inputs.items()}
+
+        # Otherwise just encode the sequence and leave the rest to the data collator.
+        else:
+            inputs = self.tokenizer(sample.prompt_question, sample.text)
 
         if self.type:
             label = sample.content if self.type == PredictionType.content else sample.wording

@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 import pytest
 import torch
-from unittest.mock import Mock
+from transformers import AutoTokenizer
 
 from commonlit_summaries.data import SummaryDataset, PredictionType, load_data
 
@@ -23,25 +23,26 @@ def mock_data() -> pd.DataFrame:
     )
 
 
-def test_create_inference_dataset(mock_tokenizer: Mock, mock_data: pd.DataFrame):
-    dataset = SummaryDataset(mock_tokenizer, mock_data)
+def test_create_inference_dataset(tokenizer: AutoTokenizer, mock_data: pd.DataFrame):
+    length = 512
+    dataset = SummaryDataset(tokenizer, mock_data, fix_length=length)
     inputs = dataset[0]
     assert "input_ids" in inputs
     assert "attention_mask" in inputs
     assert "labels" not in inputs
     assert isinstance(inputs["input_ids"], torch.Tensor)
     assert isinstance(inputs["attention_mask"], torch.Tensor)
-    assert len(inputs["input_ids"]) == len(inputs["attention_mask"])
+    assert len(inputs["input_ids"]) == len(inputs["attention_mask"]) == length
 
 
-def test_create_train_dataset(mock_tokenizer: Mock, mock_data: pd.DataFrame):
-    dataset = SummaryDataset(mock_tokenizer, mock_data, prediction_type=PredictionType.content)
+def test_create_train_dataset(tokenizer: AutoTokenizer, mock_data: pd.DataFrame):
+    dataset = SummaryDataset(tokenizer, mock_data, prediction_type=PredictionType.content)
     inputs = dataset[0]
     assert "input_ids" in inputs
     assert "attention_mask" in inputs
     assert "labels" in inputs
-    assert isinstance(inputs["input_ids"], torch.Tensor)
-    assert isinstance(inputs["attention_mask"], torch.Tensor)
+    assert isinstance(inputs["input_ids"], list)
+    assert isinstance(inputs["attention_mask"], list)
     assert len(inputs["input_ids"]) == len(inputs["attention_mask"])
 
 

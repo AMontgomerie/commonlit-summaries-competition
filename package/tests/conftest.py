@@ -1,36 +1,13 @@
 from __future__ import annotations
 import pytest
 import torch
+from transformers import AutoTokenizer
 from unittest.mock import Mock
 
 
 @pytest.fixture
-def mock_tokenizer() -> Mock:
-    class MockTokenizer:
-        def __call__(
-            self, text1: str, text2: str, truncation: bool, return_tensors: str | None = None
-        ) -> dict[str, list[int]]:
-            num_tokens = len(text1.split()) + len(text2.split())
-            return {
-                "input_ids": torch.tensor([i for i in range(num_tokens)]),
-                "attention_mask": torch.tensor([1 for _ in range(num_tokens)]),
-            }
-
-        def pad(
-            self,
-            features: list[list[int]],
-            padding,
-            max_length: int,
-            pad_to_multiple_of: bool,
-            return_tensors: str | bool,
-        ) -> list[int] | torch.Tensor:
-            tensor_size = [len(features), max_length]
-            return {
-                "input_ids": torch.zeros(size=tensor_size),
-                "attention_mask": torch.zeros(size=tensor_size),
-            }
-
-    return MockTokenizer()
+def tokenizer() -> AutoTokenizer:
+    return AutoTokenizer.from_pretrained("distilroberta-base")
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ import pandas as pd
 from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, DataCollatorWithPadding
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 from commonlit_summaries.data import SummaryDataset
 
@@ -14,9 +14,7 @@ class Model:
         self.model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels=1)
         self.model = self.model.to(self.device)
         self.model.eval()
-        self.collator = DataCollatorWithPadding(
-            self.tokenizer, padding="max_length", max_length=max_length, return_tensors="pt"
-        )
+        self.max_length = max_length
 
     def load_weights(self, weights_file: str) -> None:
         print(f"Loading {weights_file}.")
@@ -27,13 +25,12 @@ class Model:
     def predict(
         self, data: pd.DataFrame, batch_size: int, dataloader_num_workers: int = 2
     ) -> list[float]:
-        dataset = SummaryDataset(self.tokenizer, data)
+        dataset = SummaryDataset(self.tokenizer, data, fix_length=self.max_length)
         dataloader = DataLoader(
             dataset,
             batch_size=batch_size,
             shuffle=False,
             num_workers=dataloader_num_workers,
-            collate_fn=self.collator,
             pin_memory=True,
         )
         predictions = []
