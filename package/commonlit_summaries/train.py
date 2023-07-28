@@ -21,6 +21,8 @@ def main(
     valid_batch_size: int = typer.Option(128, "--valid-batch-size"),
     epochs: int = typer.Option(1, "--epochs"),
     seed: int = typer.Option(666, "--seed"),
+    scheduler: str = typer.Option("constant", "--scheduler"),
+    warmup: float = typer.Option(0.0, "--warmup"),
 ):
     set_seed(seed)
     data = load_data(data_dir)
@@ -39,6 +41,8 @@ def main(
         learning_rate=learning_rate,
         train_batch_size=train_batch_size,
         eval_batch_size=valid_batch_size,
+        scheduler=scheduler,
+        warmup=warmup,
     )
     trainer.train(epochs)
 

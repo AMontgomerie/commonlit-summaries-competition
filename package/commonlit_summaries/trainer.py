@@ -5,7 +5,7 @@ import torch
 from torch.cuda import amp
 from torch.optim import AdamW
 from torch.utils.data import DataLoader, Dataset
-from transformers import AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, get_scheduler
 
 from commonlit_summaries.data import PredictionType
 from commonlit_summaries.utils import AverageMeter
@@ -22,6 +22,8 @@ class Trainer:
         learning_rate: float,
         train_batch_size: int,
         eval_batch_size: int,
+        scheduler: str,
+        warmup: float,
         device: str = "cuda",
     ):
         self.device = device
@@ -41,6 +43,9 @@ class Trainer:
         self.train_loss = AverageMeter()
         self.scaler = amp.GradScaler()
         self.save_dir = "./"
+        total_steps = len(self.train_dataset) / len(self.train_batch_size) * self.epochs
+        num_warmup_steps = round(total_steps * warmup)
+        self.scheduler = get_scheduler(scheduler, self.optimizer, num_warmup_steps, total_steps)
 
     def train(self, epochs: int) -> AutoModelForSequenceClassification:
         rmse_per_epoch = []
@@ -72,6 +77,7 @@ class Trainer:
                 self.scaler.scale(loss).backward()
                 self.scaler.step(self.optimizer)
                 self.scaler.update()
+                self.scheduler.step()
                 tepoch.set_postfix({"train_loss": self.train_loss.avg})
                 tepoch.update(1)
 
