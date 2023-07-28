@@ -38,6 +38,7 @@ def test_trainer(mock_data: pd.DataFrame):
         )
         model, metrics = trainer.train()
 
+        # Check that we have a file output for each epoch
         assert len(os.listdir(tempdir)) == epochs
 
     assert isinstance(model, torch.nn.Module)
