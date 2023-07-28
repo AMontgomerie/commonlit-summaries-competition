@@ -54,7 +54,7 @@ class Trainer:
         print(f"Training {self.fold} for {self.epochs}.")
         rmse_per_epoch = []
 
-        for epoch in range(self.epochs):
+        for epoch in range(1, self.epochs + 1):
             self._train_epoch()
             mse = self._evaluate()
             rmse = np.sqrt(mse)
