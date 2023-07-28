@@ -1,26 +1,11 @@
 import pandas as pd
 from pathlib import Path
-import pytest
 import torch
 from transformers import AutoTokenizer
 
 from commonlit_summaries.data import SummaryDataset, PredictionType, load_data
 
 DATA_DIR = Path(__file__).parents[3] / "data"
-
-
-@pytest.fixture
-def mock_data() -> pd.DataFrame:
-    return pd.DataFrame(
-        {
-            "student_id": [1, 2, 3],
-            "prompt_id": [1, 2, 3],
-            "prompt_question": ["a", "b", "c"],
-            "text": ["a", "b", "c"],
-            "content": [0, 0.5, 1],
-            "wording": [0, 0.5, 1],
-        }
-    )
 
 
 def test_create_inference_dataset(tokenizer: AutoTokenizer, mock_data: pd.DataFrame):

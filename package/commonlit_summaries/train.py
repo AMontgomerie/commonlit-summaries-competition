@@ -23,6 +23,7 @@ def main(
     seed: int = typer.Option(666, "--seed"),
     scheduler: str = typer.Option("constant", "--scheduler"),
     warmup: float = typer.Option(0.0, "--warmup"),
+    save_dir: Path = typer.Option("./", "--save-dir"),
 ):
     set_seed(seed)
     data = load_data(data_dir)
@@ -43,8 +44,10 @@ def main(
         eval_batch_size=valid_batch_size,
         scheduler=scheduler,
         warmup=warmup,
+        epochs=epochs,
+        save_dir=save_dir,
     )
-    trainer.train(epochs)
+    trainer.train()
 
 
 if __name__ == "__main__":

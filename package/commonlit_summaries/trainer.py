@@ -1,5 +1,5 @@
-import os
 import numpy as np
+from pathlib import Path
 from tqdm import tqdm
 import torch
 from torch.cuda import amp
@@ -24,6 +24,8 @@ class Trainer:
         eval_batch_size: int,
         scheduler: str,
         warmup: float,
+        epochs: int,
+        save_dir: Path = Path("./"),
         device: str = "cuda",
     ):
         self.device = device
@@ -42,16 +44,17 @@ class Trainer:
         self.optimizer = AdamW(self.model.parameters(), lr=learning_rate)
         self.train_loss = AverageMeter()
         self.scaler = amp.GradScaler()
-        self.save_dir = "./"
-        total_steps = len(self.train_dataset) / len(self.train_batch_size) * self.epochs
+        self.save_dir = save_dir
+        self.epochs = epochs
+        total_steps = len(self.train_dataset) / self.train_batch_size * self.epochs
         num_warmup_steps = round(total_steps * warmup)
         self.scheduler = get_scheduler(scheduler, self.optimizer, num_warmup_steps, total_steps)
 
-    def train(self, epochs: int) -> AutoModelForSequenceClassification:
+    def train(self) -> AutoModelForSequenceClassification:
+        print(f"Training {self.fold} for {self.epochs}.")
         rmse_per_epoch = []
 
-        for epoch in range(epochs):
-            print(f"Epoch {epoch}")
+        for epoch in range(self.epochs):
             self._train_epoch()
             mse = self._evaluate()
             rmse = np.sqrt(mse)
@@ -60,7 +63,9 @@ class Trainer:
             rmse_per_epoch.append(rmse)
 
         print(f"EVAL FOLD {self.fold} SUMMARY:")
-        print(rmse_per_epoch)
+        print(f"RMSE per epoch: {rmse_per_epoch}")
+
+        return self.model, rmse_per_epoch
 
     def _train_epoch(self):
         self.model.train()
@@ -119,5 +124,5 @@ class Trainer:
     def _save(self, fold: str, epoch: int) -> None:
         model_name = self.model_checkpoint.replace("/", "_")
         file_name = f"{model_name}-{self.prediction_type.value}-fold-{fold}-epoch-{epoch}.bin"
-        save_path = os.path.join(self.save_dir, file_name)
+        save_path = self.save_dir / file_name
         torch.save(self.model.state_dict(), save_path)

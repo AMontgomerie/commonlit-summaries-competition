@@ -1,4 +1,5 @@
 from __future__ import annotations
+import pandas as pd
 import pytest
 import torch
 from transformers import AutoTokenizer
@@ -29,3 +30,17 @@ def mock_model_for_sequence_classification():
             pass
 
     return MockModel()
+
+
+@pytest.fixture
+def mock_data() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "student_id": [1, 2, 3],
+            "prompt_id": [1, 2, 3],
+            "prompt_question": ["a", "b", "c"],
+            "text": ["a", "b", "c"],
+            "content": [0, 0.5, 1],
+            "wording": [0, 0.5, 1],
+        }
+    )
