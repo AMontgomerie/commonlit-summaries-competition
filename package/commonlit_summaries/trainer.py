@@ -43,12 +43,19 @@ class Trainer:
         self.save_dir = "./"
 
     def train(self, epochs: int) -> AutoModelForSequenceClassification:
-        for epoch in range(1, epochs + 1):
+        rmse_per_epoch = []
+
+        for epoch in range(epochs):
             print(f"Epoch {epoch}")
             self._train_epoch()
-            mse_loss = self._evaluate()
-            print(f"Epoch: {epoch} | MSE: {mse_loss} | RMSE: {np.sqrt(mse_loss)}")
+            mse = self._evaluate()
+            rmse = np.sqrt(mse)
+            print(f"Epoch: {epoch} | MSE: {mse} | RMSE: {rmse}")
             self._save(self.fold, epoch)
+            rmse_per_epoch.append(rmse)
+
+        print(f"EVAL FOLD {self.fold} SUMMARY:")
+        print(rmse_per_epoch)
 
     def _train_epoch(self):
         self.model.train()
