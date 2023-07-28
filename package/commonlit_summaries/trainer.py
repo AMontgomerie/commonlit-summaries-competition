@@ -43,7 +43,7 @@ class Trainer:
         self.save_dir = "./"
 
     def train(self, epochs: int) -> AutoModelForSequenceClassification:
-        for epoch in range(epochs):
+        for epoch in range(1, epochs + 1):
             print(f"Epoch {epoch}")
             self._train_epoch()
             mse_loss = self._evaluate()
