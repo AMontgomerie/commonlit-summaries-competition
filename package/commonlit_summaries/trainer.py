@@ -4,7 +4,7 @@ import torch
 from torch.cuda import amp
 from torch.optim import AdamW
 from torch.utils.data import DataLoader, Dataset
-from transformers import AutoModelForSequenceClassification, DataCollatorWithPadding
+from transformers import AutoModelForSequenceClassification
 
 from commonlit_summaries.data import PredictionType
 from commonlit_summaries.utils import AverageMeter
@@ -18,7 +18,6 @@ class Trainer:
         model_checkpoint: str,
         train_dataset: Dataset,
         eval_dataset: Dataset,
-        max_length: int,
         learning_rate: float,
         train_batch_size: int,
         eval_batch_size: int,
@@ -37,12 +36,6 @@ class Trainer:
         self.train_batch_size = train_batch_size
         self.eval_batch_size = eval_batch_size
         self.dataloader_num_workers = 2
-        self.collator = DataCollatorWithPadding(
-            train_dataset.tokenizer,
-            padding="max_length",
-            max_length=max_length,
-            return_tensors="pt",
-        )
         self.optimizer = AdamW(self.model.parameters(), lr=learning_rate)
         self.train_loss = AverageMeter()
         self.scaler = amp.GradScaler()
@@ -110,7 +103,6 @@ class Trainer:
             batch_size=batch_size,
             shuffle=shuffle,
             num_workers=self.dataloader_num_workers,
-            collate_fn=self.collator,
             pin_memory=True,
         )
 
