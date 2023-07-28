@@ -25,6 +25,7 @@ class Trainer:
         scheduler: str,
         warmup: float,
         epochs: int,
+        accumulation_steps: int,
         save_dir: Path = Path("./"),
         device: str = "cuda",
     ):
@@ -46,9 +47,12 @@ class Trainer:
         self.scaler = amp.GradScaler()
         self.save_dir = save_dir
         self.epochs = epochs
-        total_steps = len(self.train_dataset) / self.train_batch_size * self.epochs
+        self.accumulation_steps = accumulation_steps
+        epoch_steps = (len(self.train_dataset) // self.train_batch_size) // self.accumulation_steps
+        total_steps = epoch_steps * self.epochs
         num_warmup_steps = round(total_steps * warmup)
         self.scheduler = get_scheduler(scheduler, self.optimizer, num_warmup_steps, total_steps)
+        self.step = 1
 
     def train(self) -> AutoModelForSequenceClassification:
         print(f"Training {self.fold} for {self.epochs}.")
@@ -79,12 +83,17 @@ class Trainer:
                 self.optimizer.zero_grad(set_to_none=True)
                 loss = self._model_fn(batch)
                 self.train_loss.update(loss.item(), self.train_batch_size)
-                self.scaler.scale(loss).backward()
-                self.scaler.step(self.optimizer)
-                self.scaler.update()
-                self.scheduler.step()
+
+                if self.step % self.accumulation_steps == 0:
+                    loss = loss / self.accumulation_steps
+                    self.scaler.scale(loss).backward()
+                    self.scaler.step(self.optimizer)
+                    self.scaler.update()
+                    self.scheduler.step()
+
                 tepoch.set_postfix({"train_loss": self.train_loss.avg})
                 tepoch.update(1)
+                self.step += 1
 
     @torch.no_grad()
     def _evaluate(self) -> float:

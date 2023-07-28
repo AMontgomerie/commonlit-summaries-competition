@@ -24,6 +24,7 @@ def main(
     scheduler: str = typer.Option("constant", "--scheduler"),
     warmup: float = typer.Option(0.0, "--warmup"),
     save_dir: Path = typer.Option("./", "--save-dir"),
+    accumulation_steps: int = typer.Option(1, "--accumulation-steps"),
 ):
     set_seed(seed)
     data = load_data(data_dir)
@@ -45,6 +46,7 @@ def main(
         warmup=warmup,
         epochs=epochs,
         save_dir=save_dir,
+        accumulation_steps=accumulation_steps,
     )
     trainer.train()
 
