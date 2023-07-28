@@ -9,19 +9,6 @@ DATA_DIR = Path(__file__).parents[1] / "data"
 
 
 @pytest.fixture
-def mock_tokenizer() -> Mock:
-    class MockTokenizer:
-        def __call__(self, text1: str, text2: str, truncation: bool) -> dict[str, list[int]]:
-            num_tokens = len(text1.split()) + len(text2.split())
-            return {
-                "input_ids": [i for i in range(num_tokens)],
-                "attention_mask": [1 for _ in range(num_tokens)],
-            }
-
-    return MockTokenizer()
-
-
-@pytest.fixture
 def mock_data() -> pd.DataFrame:
     return pd.DataFrame(
         {
