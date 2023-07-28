@@ -15,13 +15,15 @@ def model():
 
 
 @pytest.fixture
-def test_data() -> pd.DataFrame:
-    return load_data(DATA_DIR, train=False)
+def data() -> pd.DataFrame:
+    # Sample some rows from the training set since they contain real data
+    data = load_data(DATA_DIR, train=True)
+    return data.sample(20).reset_index(drop=True)
 
 
-def test_predict(model: Model, test_data: pd.DataFrame):
-    predictions = model.predict(test_data, batch_size=4)
-    assert len(predictions) == len(test_data)
+def test_predict(model: Model, data: pd.DataFrame):
+    predictions = model.predict(data, batch_size=4, dataloader_num_workers=0)
+    assert len(predictions) == len(data)
 
 
 def test_load_weights(model: Model):

@@ -7,11 +7,13 @@ from unittest.mock import Mock
 @pytest.fixture
 def mock_tokenizer() -> Mock:
     class MockTokenizer:
-        def __call__(self, text1: str, text2: str, truncation: bool) -> dict[str, list[int]]:
+        def __call__(
+            self, text1: str, text2: str, truncation: bool, return_tensors: str | None = None
+        ) -> dict[str, list[int]]:
             num_tokens = len(text1.split()) + len(text2.split())
             return {
-                "input_ids": [i for i in range(num_tokens)],
-                "attention_mask": [1 for _ in range(num_tokens)],
+                "input_ids": torch.tensor([i for i in range(num_tokens)]),
+                "attention_mask": torch.tensor([1 for _ in range(num_tokens)]),
             }
 
         def pad(

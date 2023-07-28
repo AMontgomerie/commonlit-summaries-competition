@@ -26,7 +26,10 @@ class SummaryDataset:
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         sample = self.data.loc[index]
-        inputs = self.tokenizer(sample.prompt_question, sample.text, truncation=True)
+        inputs = self.tokenizer(
+            sample.prompt_question, sample.text, truncation=True, return_tensors="pt"
+        )
+        inputs = {k: v.squeeze(dim=0) for k, v in inputs.items()}
 
         if self.type:
             label = sample.content if self.type == PredictionType.content else sample.wording

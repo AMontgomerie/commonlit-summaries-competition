@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 import pytest
+import torch
 from unittest.mock import Mock
 
 from commonlit_summaries.data import SummaryDataset, PredictionType, load_data
@@ -28,8 +29,8 @@ def test_create_inference_dataset(mock_tokenizer: Mock, mock_data: pd.DataFrame)
     assert "input_ids" in inputs
     assert "attention_mask" in inputs
     assert "labels" not in inputs
-    assert isinstance(inputs["input_ids"], list)
-    assert isinstance(inputs["attention_mask"], list)
+    assert isinstance(inputs["input_ids"], torch.Tensor)
+    assert isinstance(inputs["attention_mask"], torch.Tensor)
     assert len(inputs["input_ids"]) == len(inputs["attention_mask"])
 
 
@@ -39,8 +40,8 @@ def test_create_train_dataset(mock_tokenizer: Mock, mock_data: pd.DataFrame):
     assert "input_ids" in inputs
     assert "attention_mask" in inputs
     assert "labels" in inputs
-    assert isinstance(inputs["input_ids"], list)
-    assert isinstance(inputs["attention_mask"], list)
+    assert isinstance(inputs["input_ids"], torch.Tensor)
+    assert isinstance(inputs["attention_mask"], torch.Tensor)
     assert len(inputs["input_ids"]) == len(inputs["attention_mask"])
 
 
