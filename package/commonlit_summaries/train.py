@@ -13,6 +13,7 @@ app = typer.Typer(add_completion=False)
 def main(
     prediction_type: PredictionType = typer.Option(..., "--prediction-type"),
     fold: str = typer.Option(..., "--fold"),
+    model_name: str = typer.Option(..., "--name"),
     model_checkpoint: str = typer.Option(..., "--checkpoint"),
     data_dir: Path = typer.Option("./", "--data-dir"),
     max_length: int = typer.Option(512, "--max-length"),
@@ -25,6 +26,7 @@ def main(
     warmup: float = typer.Option(0.0, "--warmup"),
     save_dir: Path = typer.Option("./", "--save-dir"),
     accumulation_steps: int = typer.Option(1, "--accumulation-steps"),
+    loss: str = typer.Option("mse", "--loss"),
 ):
     set_seed(seed)
     data = load_data(data_dir)
@@ -36,6 +38,7 @@ def main(
     trainer = Trainer(
         prediction_type=prediction_type,
         fold=fold,
+        model_name=model_name,
         model_checkpoint=model_checkpoint,
         train_dataset=train_dataset,
         eval_dataset=valid_dataset,
@@ -47,6 +50,7 @@ def main(
         epochs=epochs,
         save_dir=save_dir,
         accumulation_steps=accumulation_steps,
+        loss=loss,
     )
     trainer.train()
 

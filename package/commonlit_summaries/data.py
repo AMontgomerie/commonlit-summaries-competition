@@ -8,6 +8,7 @@ from transformers import AutoTokenizer
 class PredictionType(Enum):
     content = "content"
     wording = "wording"
+    both = "both"
 
 
 class SummaryDataset:
@@ -47,7 +48,12 @@ class SummaryDataset:
             inputs = self.tokenizer(sample.prompt_question, sample.text)
 
         if self.type:
-            label = sample.content if self.type == PredictionType.content else sample.wording
+            label_data = {
+                PredictionType.content: sample.content,
+                PredictionType.wording: sample.wording,
+                PredictionType.both: [sample.content, sample.wording],
+            }
+            label = label_data[self.type]
             inputs["labels"] = torch.tensor(label, dtype=torch.float32)
 
         return inputs

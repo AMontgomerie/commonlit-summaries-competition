@@ -2,12 +2,15 @@ import numpy as np
 from pathlib import Path
 from tqdm import tqdm
 import torch
+from torch.nn import MSELoss
 from torch.cuda import amp
 from torch.optim import AdamW
+from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModelForSequenceClassification, get_scheduler
 
 from commonlit_summaries.data import PredictionType
+from commonlit_summaries.losses import RMSELoss, MCRMSELoss
 from commonlit_summaries.utils import AverageMeter
 
 
@@ -16,6 +19,7 @@ class Trainer:
         self,
         prediction_type: PredictionType,
         fold: str,
+        model_name: str,
         model_checkpoint: str,
         train_dataset: Dataset,
         eval_dataset: Dataset,
@@ -26,17 +30,16 @@ class Trainer:
         warmup: float,
         epochs: int,
         accumulation_steps: int,
+        loss: str,
         save_dir: Path = Path("./"),
         device: str = "cuda",
     ):
         self.device = device
         self.prediction_type = prediction_type
         self.fold = fold
-        self.model = AutoModelForSequenceClassification.from_pretrained(
-            model_checkpoint, num_labels=1
-        )
-        self.model_checkpoint = model_checkpoint
-        self.model.to(self.device)
+        self.model_name = model_name
+        self.model = self._init_model(model_checkpoint)
+        self.loss_fn = self._init_loss_fn(loss)
         self.train_dataset = train_dataset
         self.eval_dataset = eval_dataset
         self.train_batch_size = train_batch_size
@@ -45,17 +48,35 @@ class Trainer:
         self.optimizer = AdamW(self.model.parameters(), lr=learning_rate)
         self.train_loss = AverageMeter()
         self.scaler = amp.GradScaler()
-        self.save_dir = save_dir
         self.epochs = epochs
         self.accumulation_steps = accumulation_steps
-        epoch_steps = (len(self.train_dataset) // self.train_batch_size) // self.accumulation_steps
-        total_steps = epoch_steps * self.epochs
-        num_warmup_steps = round(total_steps * warmup)
-        self.scheduler = get_scheduler(scheduler, self.optimizer, num_warmup_steps, total_steps)
+        self.scheduler = self._init_scheduler(scheduler, warmup)
+        self.save_dir = save_dir
         self.step = 1
 
+    def _init_model(self, model_checkpoint: str) -> AutoModelForSequenceClassification:
+        num_labels = 2 if self.prediction_type == PredictionType.both else 1
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_checkpoint, num_labels=num_labels
+        )
+        return model.to(self.device)
+
+    def _init_loss_fn(self, name: str) -> torch.nn.Module:
+        losses = {"mse": MSELoss, "rmse": RMSELoss, "mcrmse": MCRMSELoss}
+
+        if name not in losses:
+            raise ValueError(f"{name} is not a valid loss function.")
+
+        return losses[name]()
+
+    def _init_scheduler(self, scheduler_name: str, warmup_proportion: float) -> LRScheduler:
+        epoch_steps = (len(self.train_dataset) // self.train_batch_size) // self.accumulation_steps
+        total_steps = epoch_steps * self.epochs
+        num_warmup_steps = round(total_steps * warmup_proportion)
+        return get_scheduler(scheduler_name, self.optimizer, num_warmup_steps, total_steps)
+
     def train(self) -> AutoModelForSequenceClassification:
-        print(f"Training {self.fold} for {self.epochs}.")
+        print(f"Training {self.fold} for {self.epochs} epochs.")
         rmse_per_epoch = []
 
         for epoch in range(1, self.epochs + 1):
@@ -117,7 +138,11 @@ class Trainer:
         with amp.autocast():
             output = self.model(**batch)
 
-        return output.loss
+        loss = self._compute_loss(output.logits, batch["labels"])
+        return loss
+
+    def _compute_loss(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+        return self.loss_fn(logits.squeeze(), labels)
 
     def _get_dataloader(
         self, dataset: Dataset, batch_size: int, shuffle: bool = False
@@ -131,7 +156,7 @@ class Trainer:
         )
 
     def _save(self, fold: str, epoch: int) -> None:
-        model_name = self.model_checkpoint.replace("/", "_")
+        model_name = self.model_name.replace("/", "_")
         file_name = f"{model_name}-{self.prediction_type.value}-fold-{fold}-epoch-{epoch}.bin"
         save_path = self.save_dir / file_name
         torch.save(self.model.state_dict(), save_path)
