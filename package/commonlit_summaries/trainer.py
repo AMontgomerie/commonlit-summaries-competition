@@ -93,6 +93,7 @@ class Trainer:
         return self.model, rmse_per_epoch
 
     def _train_epoch(self):
+        self.optimizer.zero_grad(set_to_none=True)
         self.model.train()
         self.train_loss.reset()
         train_loader = self._get_dataloader(
@@ -101,16 +102,17 @@ class Trainer:
         with tqdm(total=len(train_loader), unit="batches") as tepoch:
             for batch in train_loader:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
-                self.optimizer.zero_grad(set_to_none=True)
+
                 loss = self._model_fn(batch)
                 self.train_loss.update(loss.item(), self.train_batch_size)
+                loss = loss / self.accumulation_steps
+                self.scaler.scale(loss).backward()
 
                 if self.step % self.accumulation_steps == 0:
-                    loss = loss / self.accumulation_steps
-                    self.scaler.scale(loss).backward()
                     self.scaler.step(self.optimizer)
                     self.scaler.update()
                     self.scheduler.step()
+                    self.optimizer.zero_grad(set_to_none=True)
 
                 tepoch.set_postfix({"train_loss": self.train_loss.avg})
                 tepoch.update(1)
