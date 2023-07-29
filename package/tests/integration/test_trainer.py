@@ -5,12 +5,12 @@ import tempfile
 import torch
 from transformers import AutoTokenizer
 
-from commonlit_summaries.trainer import Trainer
+from commonlit_summaries.experiment import Experiment
 from commonlit_summaries.data import PredictionType, SummaryDataset
 
 
-def test_trainer(mock_data: pd.DataFrame):
-    """Creates a `Trainer` and runs a small amount of dummy data through it.
+def test_experiment(mock_data: pd.DataFrame):
+    """Creates an `Experiment` and runs a small amount of dummy data through it.
 
     Models are saved to a temporary directory.
     """
@@ -21,7 +21,7 @@ def test_trainer(mock_data: pd.DataFrame):
     epochs = 2
 
     with tempfile.TemporaryDirectory() as tempdir:
-        trainer = Trainer(
+        experiment = Experiment(
             prediction_type=prediction_type,
             fold="test-fold",
             model_name=checkpoint,
@@ -39,7 +39,7 @@ def test_trainer(mock_data: pd.DataFrame):
             loss="mse",
             accumulation_steps=2,
         )
-        model, metrics = trainer.train()
+        model, metrics = experiment.run()
 
         # Check that we have a file output for each epoch
         assert len(os.listdir(tempdir)) == epochs
@@ -48,7 +48,7 @@ def test_trainer(mock_data: pd.DataFrame):
     assert len(metrics) == epochs
 
 
-def test_trainer_both_mcrmse(mock_data: pd.DataFrame):
+def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
     """Same as the above test but tests predicting on both content and wording at the same time
     with MCRMSE loss.
     """
@@ -59,7 +59,7 @@ def test_trainer_both_mcrmse(mock_data: pd.DataFrame):
     epochs = 2
 
     with tempfile.TemporaryDirectory() as tempdir:
-        trainer = Trainer(
+        experiment = Experiment(
             prediction_type=prediction_type,
             fold="test-fold",
             model_name=checkpoint,
@@ -77,7 +77,7 @@ def test_trainer_both_mcrmse(mock_data: pd.DataFrame):
             loss="mcrmse",
             accumulation_steps=1,
         )
-        model, metrics = trainer.train()
+        model, metrics = experiment.run()
 
         # Check that we have a file output for each epoch
         assert len(os.listdir(tempdir)) == epochs

@@ -3,7 +3,7 @@ from transformers import AutoTokenizer
 import typer
 
 from commonlit_summaries.data import PredictionType, SummaryDataset, load_data
-from commonlit_summaries.trainer import Trainer
+from commonlit_summaries.experiment import Experiment
 from commonlit_summaries.utils import set_seed
 
 app = typer.Typer(add_completion=False)
@@ -35,7 +35,7 @@ def main(
     tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
     train_dataset = SummaryDataset(tokenizer, train_data, prediction_type, fix_length=max_length)
     valid_dataset = SummaryDataset(tokenizer, valid_data, prediction_type, fix_length=max_length)
-    trainer = Trainer(
+    experiment = Experiment(
         prediction_type=prediction_type,
         fold=fold,
         model_name=model_name,
@@ -52,7 +52,7 @@ def main(
         accumulation_steps=accumulation_steps,
         loss=loss,
     )
-    trainer.train()
+    experiment.run()
 
 
 if __name__ == "__main__":
