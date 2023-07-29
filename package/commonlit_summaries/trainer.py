@@ -104,7 +104,6 @@ class Trainer:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
                 loss = self._model_fn(batch)
                 self.train_loss.update(loss.item(), self.train_batch_size)
-                loss = loss / self.accumulation_steps
                 self.scaler.scale(loss).backward()
 
                 if self.step % self.accumulation_steps == 0:
@@ -138,12 +137,10 @@ class Trainer:
     def _model_fn(self, batch: dict[str, torch.Tensor]) -> torch.Tensor:
         with amp.autocast():
             output = self.model(**batch)
-            loss = self._compute_loss(output.logits, batch["labels"])
+            loss = self.loss_fn(output.logits, batch["labels"])
+            loss = loss / self.accumulation_steps
 
         return loss
-
-    def _compute_loss(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-        return self.loss_fn(logits.squeeze(), labels)
 
     def _get_dataloader(
         self, dataset: Dataset, batch_size: int, shuffle: bool = False
