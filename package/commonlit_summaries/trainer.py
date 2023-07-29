@@ -101,17 +101,8 @@ class Trainer:
         )
         with tqdm(total=len(train_loader), unit="batches") as tepoch:
             for batch in train_loader:
-                batch = {k: v.to(self.device) for k, v in batch.items()}
-                loss = self._model_fn(batch)
-                self.train_loss.update(loss.item(), self.train_batch_size)
-                self.scaler.scale(loss).backward()
-
-                if self.step % self.accumulation_steps == 0:
-                    self.scaler.step(self.optimizer)
-                    self.scaler.update()
-                    self.scheduler.step()
-                    self.optimizer.zero_grad(set_to_none=True)
-
+                loss = self._forward_pass(batch)
+                self._backward_pass(loss)
                 tepoch.set_postfix({"train_loss": self.train_loss.avg})
                 tepoch.update(1)
                 self.step += 1
@@ -134,13 +125,25 @@ class Trainer:
 
         return eval_loss.avg
 
-    def _model_fn(self, batch: dict[str, torch.Tensor]) -> torch.Tensor:
+    def _forward_pass(self, batch: dict[str, torch.Tensor]) -> torch.Tensor:
+        batch = {k: v.to(self.device) for k, v in batch.items()}
+
         with amp.autocast():
             output = self.model(**batch)
             loss = self.loss_fn(output.logits, batch["labels"])
             loss = loss / self.accumulation_steps
 
+        self.train_loss.update(loss.item(), self.train_batch_size)
         return loss
+
+    def _backward_pass(self, loss: torch.Tensor) -> None:
+        self.scaler.scale(loss).backward()
+
+        if self.step % self.accumulation_steps == 0:
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
+            self.scheduler.step()
+            self.optimizer.zero_grad(set_to_none=True)
 
     def _get_dataloader(
         self, dataset: Dataset, batch_size: int, shuffle: bool = False
