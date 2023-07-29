@@ -23,7 +23,7 @@ class MCRMSELoss(torch.nn.Module):
         self.num_targets = num_targets
 
     def forward(self, predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        loss = 0
+        loss = torch.tensor([0])
 
         for i in range(self.num_targets):
             loss += self.rmse(predictions[:, i], targets[:, i]) / self.num_targets

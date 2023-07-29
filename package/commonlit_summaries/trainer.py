@@ -102,7 +102,6 @@ class Trainer:
         with tqdm(total=len(train_loader), unit="batches") as tepoch:
             for batch in train_loader:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
-
                 loss = self._model_fn(batch)
                 self.train_loss.update(loss.item(), self.train_batch_size)
                 loss = loss / self.accumulation_steps
@@ -139,8 +138,8 @@ class Trainer:
     def _model_fn(self, batch: dict[str, torch.Tensor]) -> torch.Tensor:
         with amp.autocast():
             output = self.model(**batch)
+            loss = self._compute_loss(output.logits, batch["labels"])
 
-        loss = self._compute_loss(output.logits, batch["labels"])
         return loss
 
     def _compute_loss(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
