@@ -11,7 +11,7 @@ app = typer.Typer(add_completion=False)
 
 @app.command()
 def main(
-    prompt_type: PromptType = typer.Option(..., "--prompt_type"),
+    prompt_type: PromptType = typer.Option(..., "--prompt-type"),
     prediction_type: PredictionType = typer.Option(..., "--prediction-type"),
     fold: str = typer.Option(..., "--fold"),
     model_name: str = typer.Option(..., "--name"),

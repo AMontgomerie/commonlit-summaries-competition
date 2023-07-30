@@ -12,7 +12,7 @@ app = typer.Typer(add_completion=False)
 
 @app.command()
 def main(
-    prompt_type: PromptType = typer.Option(..., "--prompt_type"),
+    prompt_type: PromptType = typer.Option(..., "--prompt-type"),
     model_checkpoint: str = typer.Option(..., "--checkpoint"),
     weights_dir: Path = typer.Option(..., "--weights-dir"),
     data_dir: Path = typer.Option("./", "--data-dir"),
