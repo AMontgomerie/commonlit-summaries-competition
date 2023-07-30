@@ -3,14 +3,14 @@ from pathlib import Path
 import torch
 from transformers import AutoTokenizer
 
-from commonlit_summaries.data import SummaryDataset, PredictionType, load_data
+from commonlit_summaries.data import SummaryDataset, PromptType, PredictionType, load_data
 
 DATA_DIR = Path(__file__).parents[3] / "data"
 
 
 def test_create_inference_dataset(tokenizer: AutoTokenizer, mock_data: pd.DataFrame):
     length = 512
-    dataset = SummaryDataset(tokenizer, mock_data, fix_length=length)
+    dataset = SummaryDataset(tokenizer, mock_data, PromptType.question, fix_length=length)
     inputs = dataset[0]
     assert "input_ids" in inputs
     assert "attention_mask" in inputs
@@ -21,7 +21,9 @@ def test_create_inference_dataset(tokenizer: AutoTokenizer, mock_data: pd.DataFr
 
 
 def test_create_train_dataset(tokenizer: AutoTokenizer, mock_data: pd.DataFrame):
-    dataset = SummaryDataset(tokenizer, mock_data, prediction_type=PredictionType.content)
+    dataset = SummaryDataset(
+        tokenizer, mock_data, PromptType.text, prediction_type=PredictionType.content
+    )
     inputs = dataset[0]
     assert "input_ids" in inputs
     assert "attention_mask" in inputs
@@ -34,7 +36,7 @@ def test_create_train_dataset(tokenizer: AutoTokenizer, mock_data: pd.DataFrame)
 def test_load_test_data():
     data = load_data(DATA_DIR, train=False)
 
-    for column in ["student_id", "prompt_id", "prompt_question", "text"]:
+    for column in ["student_id", "prompt_id", "prompt_question", "prompt_text", "text"]:
         assert column in data.columns
 
     for column in ["content", "wording"]:
@@ -49,6 +51,7 @@ def test_load_train_data():
         "student_id",
         "prompt_id",
         "prompt_question",
+        "prompt_text",
         "text",
         "content",
         "wording",

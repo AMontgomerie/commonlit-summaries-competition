@@ -6,7 +6,7 @@ import torch
 from transformers import AutoTokenizer
 
 from commonlit_summaries.experiment import Experiment
-from commonlit_summaries.data import PredictionType, SummaryDataset
+from commonlit_summaries.data import PromptType, PredictionType, SummaryDataset
 
 
 def test_experiment(mock_data: pd.DataFrame):
@@ -17,7 +17,9 @@ def test_experiment(mock_data: pd.DataFrame):
     prediction_type = PredictionType.content
     checkpoint = "distilroberta-base"
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-    dataset = SummaryDataset(tokenizer, mock_data, prediction_type=prediction_type, fix_length=512)
+    dataset = SummaryDataset(
+        tokenizer, mock_data, PromptType.both, prediction_type=prediction_type, fix_length=512
+    )
     epochs = 2
 
     with tempfile.TemporaryDirectory() as tempdir:
@@ -38,6 +40,7 @@ def test_experiment(mock_data: pd.DataFrame):
             save_dir=Path(tempdir),
             loss="mse",
             accumulation_steps=2,
+            dataloader_workers=0,
         )
         model, metrics = experiment.run()
 
@@ -55,7 +58,9 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
     prediction_type = PredictionType.both
     checkpoint = "distilroberta-base"
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-    dataset = SummaryDataset(tokenizer, mock_data, prediction_type=prediction_type, fix_length=512)
+    dataset = SummaryDataset(
+        tokenizer, mock_data, PromptType.question, prediction_type=prediction_type, fix_length=512
+    )
     epochs = 2
 
     with tempfile.TemporaryDirectory() as tempdir:
@@ -76,6 +81,7 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
             save_dir=Path(tempdir),
             loss="mcrmse",
             accumulation_steps=1,
+            dataloader_workers=0,
         )
         model, metrics = experiment.run()
 

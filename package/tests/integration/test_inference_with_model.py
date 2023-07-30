@@ -4,14 +4,14 @@ import pytest
 import torch
 
 from commonlit_summaries.inference import Model
-from commonlit_summaries.data import load_data
+from commonlit_summaries.data import load_data, PromptType
 
 DATA_DIR = Path(__file__).parents[3] / "data"
 
 
 @pytest.fixture
 def model():
-    return Model(checkpoint="distilroberta-base", max_length=512, device="cpu")
+    return Model(checkpoint="distilroberta-base", max_length=512, num_labels=1, device="cpu")
 
 
 @pytest.fixture
@@ -22,7 +22,9 @@ def data() -> pd.DataFrame:
 
 
 def test_predict(model: Model, data: pd.DataFrame):
-    predictions = model.predict(data, batch_size=4, dataloader_num_workers=0)
+    predictions = model.predict(
+        data, batch_size=4, prompt_type=PromptType.question, dataloader_num_workers=0
+    )
     assert len(predictions) == len(data)
 
 

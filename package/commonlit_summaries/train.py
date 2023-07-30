@@ -2,7 +2,7 @@ from pathlib import Path
 from transformers import AutoTokenizer
 import typer
 
-from commonlit_summaries.data import PredictionType, SummaryDataset, load_data
+from commonlit_summaries.data import PromptType, PredictionType, SummaryDataset, load_data
 from commonlit_summaries.experiment import Experiment
 from commonlit_summaries.utils import set_seed
 
@@ -11,6 +11,7 @@ app = typer.Typer(add_completion=False)
 
 @app.command()
 def main(
+    prompt_type: PromptType = typer.Option(..., "--prompt_type"),
     prediction_type: PredictionType = typer.Option(..., "--prediction-type"),
     fold: str = typer.Option(..., "--fold"),
     model_name: str = typer.Option(..., "--name"),
@@ -33,8 +34,12 @@ def main(
     train_data = data.loc[data.prompt_id != fold].reset_index(drop=True)
     valid_data = data.loc[data.prompt_id == fold].reset_index(drop=True)
     tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
-    train_dataset = SummaryDataset(tokenizer, train_data, prediction_type, fix_length=max_length)
-    valid_dataset = SummaryDataset(tokenizer, valid_data, prediction_type, fix_length=max_length)
+    train_dataset = SummaryDataset(
+        tokenizer, train_data, prompt_type, prediction_type, fix_length=max_length
+    )
+    valid_dataset = SummaryDataset(
+        tokenizer, valid_data, prompt_type, prediction_type, fix_length=max_length
+    )
     experiment = Experiment(
         prediction_type=prediction_type,
         fold=fold,

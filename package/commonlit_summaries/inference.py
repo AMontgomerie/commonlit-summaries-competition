@@ -4,14 +4,16 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-from commonlit_summaries.data import SummaryDataset
+from commonlit_summaries.data import SummaryDataset, PromptType
 
 
 class Model:
-    def __init__(self, checkpoint: str, max_length: int, device: str = "cuda"):
+    def __init__(self, checkpoint: str, max_length: int, num_labels: int, device: str = "cuda"):
         self.device = device
         self.tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-        self.model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels=1)
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            checkpoint, num_labels=num_labels
+        )
         self.model = self.model.to(self.device)
         self.model.eval()
         self.max_length = max_length
@@ -23,9 +25,13 @@ class Model:
 
     @torch.no_grad()
     def predict(
-        self, data: pd.DataFrame, batch_size: int, dataloader_num_workers: int = 2
+        self,
+        data: pd.DataFrame,
+        batch_size: int,
+        prompt_type: PromptType,
+        dataloader_num_workers: int = 2,
     ) -> list[float]:
-        dataset = SummaryDataset(self.tokenizer, data, fix_length=self.max_length)
+        dataset = SummaryDataset(self.tokenizer, data, prompt_type, fix_length=self.max_length)
         dataloader = DataLoader(
             dataset,
             batch_size=batch_size,

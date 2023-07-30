@@ -30,6 +30,7 @@ class Experiment:
         epochs: int,
         accumulation_steps: int,
         loss: str,
+        dataloader_workers: int = 2,
         save_dir: Path = Path("./"),
         device: str = "cuda",
     ):
@@ -43,7 +44,7 @@ class Experiment:
         self.eval_dataset = eval_dataset
         self.train_batch_size = train_batch_size
         self.eval_batch_size = eval_batch_size
-        self.dataloader_num_workers = 2
+        self.dataloader_num_workers = dataloader_workers
         self.optimizer = AdamW(self.model.parameters(), lr=learning_rate)
         self.train_loss_meter = AverageMeter()
         self.scaler = amp.GradScaler()
