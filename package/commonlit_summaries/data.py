@@ -6,6 +6,7 @@ from transformers import AutoTokenizer
 
 
 class PromptType(Enum):
+    none = "none"
     question = "question"
     text = "text"
     both = "both"
@@ -37,23 +38,25 @@ class SummaryDataset:
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         sample = self.data.loc[index]
+        text = sample.text
 
-        # Use either the prompt question, the prompt text, or both together as inputs. The summary
-        # text will also be used.
-        sep_token = self.tokenizer.sep_token or "\n\n"
-        prompts = {
-            PromptType.question: sample.prompt_question,
-            PromptType.text: sample.prompt_text,
-            PromptType.both: sample.prompt_text + sep_token + sample.prompt_question,
-        }
-        prompt = prompts[self.prompt_type]
+        if self.prompt_type != PromptType.none:
+            # Use either the prompt question, the prompt text, or both together as inputs. The
+            # summary text will also be used.
+            sep_token = self.tokenizer.sep_token or "\n\n"
+            prompts = {
+                PromptType.question: sample.prompt_question,
+                PromptType.text: sample.prompt_text,
+                PromptType.both: sample.prompt_text + sep_token + sample.prompt_question,
+            }
+            prompt = prompts[self.prompt_type]
+            text += sep_token + prompt
 
         # If we're not using a data collator then we can do truncation, padding, and conversion to
         # tensors here.
         if self.fix_length:
             inputs = self.tokenizer(
-                sample.text,
-                prompt,
+                text,
                 truncation=True,
                 max_length=self.fix_length,
                 padding="max_length",
@@ -63,7 +66,7 @@ class SummaryDataset:
 
         # Otherwise just encode the sequence and leave the rest to the data collator.
         else:
-            inputs = self.tokenizer(sample.text, prompt)
+            inputs = self.tokenizer(text, prompt)
 
         # Determine which targets to use.
         if self.prediction_type:
