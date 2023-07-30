@@ -60,7 +60,6 @@ def main(
         scheduler=lr_scheduler,
         train_dataset=train_dataset,
         eval_dataset=valid_dataset,
-        learning_rate=learning_rate,
         train_batch_size=train_batch_size,
         eval_batch_size=valid_batch_size,
         epochs=epochs,
