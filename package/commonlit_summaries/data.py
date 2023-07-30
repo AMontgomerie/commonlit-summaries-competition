@@ -52,8 +52,8 @@ class SummaryDataset:
         # tensors here.
         if self.fix_length:
             inputs = self.tokenizer(
-                prompt,
                 sample.text,
+                prompt,
                 truncation=True,
                 max_length=self.fix_length,
                 padding="max_length",
@@ -63,7 +63,7 @@ class SummaryDataset:
 
         # Otherwise just encode the sequence and leave the rest to the data collator.
         else:
-            inputs = self.tokenizer(prompt, sample.text)
+            inputs = self.tokenizer(sample.text, prompt)
 
         # Determine which targets to use.
         if self.prediction_type:

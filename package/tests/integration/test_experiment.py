@@ -5,6 +5,7 @@ import tempfile
 import torch
 from transformers import AutoTokenizer
 
+from commonlit_summaries.train import get_loss_fn, get_lr_scheduler, get_model, get_optimizer
 from commonlit_summaries.experiment import Experiment
 from commonlit_summaries.data import PromptType, PredictionType, SummaryDataset
 
@@ -21,24 +22,31 @@ def test_experiment(mock_data: pd.DataFrame):
         tokenizer, mock_data, PromptType.both, prediction_type=prediction_type, fix_length=512
     )
     epochs = 2
+    batch_size = 4
+    accumulation_steps = 1
+    loss_fn = get_loss_fn("mse")
+    model = get_model(checkpoint, prediction_type, device="cpu")
+    optimizer = get_optimizer(model, learning_rate=1e-5)
+    epoch_steps = (len(dataset) // batch_size) // accumulation_steps
+    lr_scheduler = get_lr_scheduler(
+        "constant", optimizer, warmup_proportion=0, epochs=epochs, steps_per_epoch=epoch_steps
+    )
 
     with tempfile.TemporaryDirectory() as tempdir:
         experiment = Experiment(
-            prediction_type=prediction_type,
             fold="test-fold",
+            loss_fn=loss_fn,
             model_name=checkpoint,
-            model_checkpoint=checkpoint,
+            model=model,
+            optimizer=optimizer,
+            scheduler=lr_scheduler,
             train_dataset=dataset,
             eval_dataset=dataset,
-            learning_rate=1e-5,
-            train_batch_size=4,
-            eval_batch_size=4,
-            scheduler="constant",
-            warmup=0.0,
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
             device="cpu",
             epochs=epochs,
             save_dir=Path(tempdir),
-            loss="mse",
             accumulation_steps=2,
             dataloader_workers=0,
         )
@@ -62,25 +70,32 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
         tokenizer, mock_data, PromptType.question, prediction_type=prediction_type, fix_length=512
     )
     epochs = 2
+    batch_size = 4
+    accumulation_steps = 2
+    loss_fn = get_loss_fn("mcrmse")
+    model = get_model(checkpoint, prediction_type, device="cpu")
+    optimizer = get_optimizer(model, learning_rate=1e-5)
+    epoch_steps = (len(dataset) // batch_size) // accumulation_steps
+    lr_scheduler = get_lr_scheduler(
+        "constant", optimizer, warmup_proportion=0, epochs=epochs, steps_per_epoch=epoch_steps
+    )
 
     with tempfile.TemporaryDirectory() as tempdir:
         experiment = Experiment(
-            prediction_type=prediction_type,
             fold="test-fold",
+            loss_fn=loss_fn,
             model_name=checkpoint,
-            model_checkpoint=checkpoint,
+            model=model,
+            optimizer=optimizer,
+            scheduler=lr_scheduler,
             train_dataset=dataset,
             eval_dataset=dataset,
-            learning_rate=1e-5,
-            train_batch_size=4,
-            eval_batch_size=4,
-            scheduler="constant",
-            warmup=0.0,
+            train_batch_size=batch_size,
+            eval_batch_size=batch_size,
             device="cpu",
             epochs=epochs,
             save_dir=Path(tempdir),
-            loss="mcrmse",
-            accumulation_steps=1,
+            accumulation_steps=2,
             dataloader_workers=0,
         )
         model, metrics = experiment.run()
