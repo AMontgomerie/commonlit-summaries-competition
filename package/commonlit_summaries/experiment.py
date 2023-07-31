@@ -1,3 +1,4 @@
+import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
 import torch
@@ -15,6 +16,7 @@ class Experiment:
         self,
         fold: str,
         loss_fn: torch.nn.Module,
+        metrics: list[str],
         model_name: str,
         model: AutoModelForSequenceClassification,
         optimizer: Optimizer,
@@ -25,6 +27,7 @@ class Experiment:
         eval_batch_size: int,
         epochs: int,
         accumulation_steps: int,
+        save_strategy: str,
         dataloader_workers: int = 2,
         save_dir: Path = Path("./"),
         device: str = "cuda",
@@ -41,41 +44,54 @@ class Experiment:
         self.train_batch_size = train_batch_size
         self.eval_batch_size = eval_batch_size
         self.dataloader_num_workers = dataloader_workers
-        self.train_loss_meter = AverageMeter()
         self.scaler = amp.GradScaler()
         self.epochs = epochs
         self.accumulation_steps = accumulation_steps
         self.save_dir = save_dir
+        self.save_strategy = save_strategy
         self.step = 1
+        self.metrics = metrics
+        self.train_loss_meter = {m: AverageMeter() for m in metrics}
 
-    def run(self) -> AutoModelForSequenceClassification:
+    def run(self) -> tuple[AutoModelForSequenceClassification, list[float]]:
         """Trains with the config specified in the constructor."""
         print(f"Training {self.fold} for {self.epochs} epochs.")
-        eval_loss_per_epoch = []
+        eval_metrics = []
 
         for epoch in range(1, self.epochs + 1):
             self._train_epoch()
-            eval_loss = self._evaluate()
-            print(f"Epoch: {epoch} | Eval loss: {eval_loss}")
-            self._save(self.fold, epoch)
-            eval_loss_per_epoch.append(eval_loss)
+            metrics = self._evaluate()
+            print(f"Epoch: {epoch} | {metrics}")
 
-        print(f"FOLD {self.fold} SUMMARY: {eval_loss_per_epoch}")
-        return self.model, eval_loss_per_epoch
+            if self.save_strategy == "all":
+                self._save(self.fold, epoch)
+
+            eval_metrics.append(metrics)
+
+        if self.save_strategy == "last":
+            self._save(self.fold, epoch)
+
+        print(f"FOLD {self.fold} SUMMARY:")
+        print(pd.DataFrame(eval_metrics))
+        return self.model, eval_metrics
 
     def _train_epoch(self) -> None:
         """Trains the model for one epoch."""
         self.optimizer.zero_grad(set_to_none=True)
         self.model.train()
-        self.train_loss_meter.reset()
+
+        for metric in self.train_loss_meter.values():
+            metric.reset()
+
         train_loader = self._get_dataloader(
             self.train_dataset, batch_size=self.train_batch_size, shuffle=True
         )
+
         with tqdm(total=len(train_loader), unit="batches") as tepoch:
             for batch in train_loader:
                 loss = self._forward_pass(batch, self.train_loss_meter)
                 self._backward_pass(loss)
-                tepoch.set_postfix({"train_loss": self.train_loss_meter.avg})
+                tepoch.set_postfix({m: self.train_loss_meter[m].avg for m in self.metrics})
                 tepoch.update(1)
                 self.step += 1
 
@@ -86,30 +102,40 @@ class Experiment:
         eval_loader = self._get_dataloader(
             self.eval_dataset, batch_size=self.eval_batch_size, shuffle=False
         )
-        eval_loss_meter = AverageMeter()
+        eval_loss_meter = {m: AverageMeter() for m in self.metrics}
 
         with tqdm(total=len(eval_loader), unit="batches") as tepoch:
             for batch in eval_loader:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
                 self._forward_pass(batch, eval_loss_meter)
-                tepoch.set_postfix({"eval_loss": eval_loss_meter.avg})
+                tepoch.set_postfix({m: eval_loss_meter[m].avg for m in self.metrics})
                 tepoch.update(1)
 
-        return eval_loss_meter.avg
+        return {m: eval_loss_meter[m].avg for m in self.metrics}
 
     def _forward_pass(
-        self, batch: dict[str, torch.Tensor], loss_meter: AverageMeter
+        self, batch: dict[str, torch.Tensor], loss_meter: dict[str, AverageMeter]
     ) -> torch.Tensor:
         """Makes a forward pass with fp16 if cuda is available."""
         batch = {k: v.to(self.device) for k, v in batch.items()}
 
         with amp.autocast():
             output = self.model(**batch)
-            loss = self.loss_fn(output.logits, batch["labels"])
-            loss_meter.update(loss.item(), batch["labels"].shape[0])
+            losses = self.loss_fn(output.logits, batch["labels"])
+            self._update_metrics(loss_meter, losses, batch_size=batch["labels"].shape[0])
+            loss = losses[0] if isinstance(losses, tuple) else losses
             loss = loss / self.accumulation_steps
 
         return loss
+
+    def _update_metrics(
+        self, loss_meters: dict[str, AverageMeter], losses: torch.Tensor, batch_size
+    ) -> None:
+        if len(self.metrics) == 1:
+            loss_meters[self.metrics[0]].update(losses.item(), batch_size)
+        else:
+            for metric, loss in zip(self.metrics, losses):
+                loss_meters[metric].update(loss.item(), batch_size)
 
     def _backward_pass(self, loss: torch.Tensor) -> None:
         """Makes a fp16 backward pass. Only updates the optimizer every `accumulation_steps`."""

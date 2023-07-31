@@ -31,6 +31,7 @@ def main(
     scheduler_name: str = typer.Option("constant", "--scheduler"),
     warmup: float = typer.Option(0.0, "--warmup"),
     save_dir: Path = typer.Option("./", "--save-dir"),
+    save_strategy: str = typer.Option("last", "--save-strategy"),
     accumulation_steps: int = typer.Option(1, "--accumulation-steps"),
     loss: str = typer.Option("mse", "--loss"),
 ):
@@ -46,7 +47,7 @@ def main(
     valid_dataset = SummaryDataset(
         tokenizer, valid_data, prompt_type, prediction_type, fix_length=max_length
     )
-    loss_fn = get_loss_fn(loss)
+    loss_fn, metrics = get_loss_fn(loss)
     model = get_model(model_checkpoint, prediction_type, device)
     optimizer = get_optimizer(model, learning_rate)
     epoch_steps = (len(train_dataset) // train_batch_size) // accumulation_steps
@@ -56,6 +57,7 @@ def main(
         loss_fn=loss_fn,
         model_name=model_name,
         model=model,
+        metrics=metrics,
         optimizer=optimizer,
         scheduler=lr_scheduler,
         train_dataset=train_dataset,
@@ -65,6 +67,7 @@ def main(
         epochs=epochs,
         save_dir=save_dir,
         accumulation_steps=accumulation_steps,
+        save_strategy=save_strategy,
     )
     experiment.run()
 
@@ -79,13 +82,18 @@ def get_model(
     return model.to(device)
 
 
-def get_loss_fn(name: str) -> torch.nn.Module:
-    losses = {"mse": MSELoss, "rmse": RMSELoss, "mcrmse": MCRMSELoss}
+def get_loss_fn(name: str) -> tuple[torch.nn.Module, list[str]]:
+    losses = {
+        "mse": (MSELoss, ["MSE"]),
+        "rmse": (RMSELoss, ["RMSE"]),
+        "mcrmse": (MCRMSELoss, ["MCRMSE", "Content RMSE", "Wording RMSE"]),
+    }
 
     if name not in losses:
         raise ValueError(f"{name} is not a valid loss function.")
 
-    return losses[name]()
+    loss_fn, metrics = losses[name]
+    return loss_fn(), metrics
 
 
 def get_optimizer(model: AutoModelForSequenceClassification, learning_rate: float) -> Optimizer:

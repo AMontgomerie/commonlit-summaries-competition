@@ -35,6 +35,7 @@ def test_experiment(mock_data: pd.DataFrame):
     with tempfile.TemporaryDirectory() as tempdir:
         experiment = Experiment(
             fold="test-fold",
+            metrics=["MSE"],
             loss_fn=loss_fn,
             model_name=checkpoint,
             model=model,
@@ -47,13 +48,13 @@ def test_experiment(mock_data: pd.DataFrame):
             device="cpu",
             epochs=epochs,
             save_dir=Path(tempdir),
+            save_strategy="last",
             accumulation_steps=2,
             dataloader_workers=0,
         )
         model, metrics = experiment.run()
 
-        # Check that we have a file output for each epoch
-        assert len(os.listdir(tempdir)) == epochs
+        assert len(os.listdir(tempdir)) == 1
 
     assert isinstance(model, torch.nn.Module)
     assert len(metrics) == epochs
@@ -86,6 +87,7 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
             loss_fn=loss_fn,
             model_name=checkpoint,
             model=model,
+            metrics=["MCRMSE", "Content RMSE", "Wording RMSE"],
             optimizer=optimizer,
             scheduler=lr_scheduler,
             train_dataset=dataset,
@@ -95,6 +97,7 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
             device="cpu",
             epochs=epochs,
             save_dir=Path(tempdir),
+            save_strategy="all",
             accumulation_steps=2,
             dataloader_workers=0,
         )
