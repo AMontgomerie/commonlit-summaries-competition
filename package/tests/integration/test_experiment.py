@@ -24,7 +24,7 @@ def test_experiment(mock_data: pd.DataFrame):
     epochs = 2
     batch_size = 4
     accumulation_steps = 1
-    loss_fn = get_loss_fn("mse")
+    loss_fn, metrics = get_loss_fn("mse")
     model = get_model(checkpoint, prediction_type, device="cpu")
     optimizer = get_optimizer(model, learning_rate=1e-5)
     epoch_steps = (len(dataset) // batch_size) // accumulation_steps
@@ -35,7 +35,7 @@ def test_experiment(mock_data: pd.DataFrame):
     with tempfile.TemporaryDirectory() as tempdir:
         experiment = Experiment(
             fold="test-fold",
-            metrics=["MSE"],
+            metrics=metrics,
             loss_fn=loss_fn,
             model_name=checkpoint,
             model=model,
@@ -73,7 +73,7 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
     epochs = 2
     batch_size = 4
     accumulation_steps = 2
-    loss_fn = get_loss_fn("mcrmse")
+    loss_fn, metrics = get_loss_fn("mcrmse")
     model = get_model(checkpoint, prediction_type, device="cpu")
     optimizer = get_optimizer(model, learning_rate=1e-5)
     epoch_steps = (len(dataset) // batch_size) // accumulation_steps
@@ -87,7 +87,7 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
             loss_fn=loss_fn,
             model_name=checkpoint,
             model=model,
-            metrics=["MCRMSE", "Content RMSE", "Wording RMSE"],
+            metrics=metrics,
             optimizer=optimizer,
             scheduler=lr_scheduler,
             train_dataset=dataset,
