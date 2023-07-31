@@ -86,7 +86,7 @@ def get_loss_fn(name: str) -> tuple[torch.nn.Module, list[str]]:
     losses = {
         "mse": (MSELoss, ["MSE"]),
         "rmse": (RMSELoss, ["RMSE"]),
-        "mcrmse": (MCRMSELoss, ["MCRMSE", "Content RMSE", "Wording RMSE"]),
+        "mcrmse": (MCRMSELoss, ["MCRMSE", "C_RMSE", "W_RMSE"]),
     }
 
     if name not in losses:
