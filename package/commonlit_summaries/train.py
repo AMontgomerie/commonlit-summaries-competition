@@ -17,7 +17,7 @@ app = typer.Typer(add_completion=False)
 
 @app.command()
 def main(
-    group_id: int = typer.Option(..., "group-id"),
+    group_id: int = typer.Option(..., "--group-id"),
     prompt_type: PromptType = typer.Option(..., "--prompt-type"),
     prediction_type: PredictionType = typer.Option(..., "--prediction-type"),
     fold: str = typer.Option(..., "--fold"),
