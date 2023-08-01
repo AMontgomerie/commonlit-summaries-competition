@@ -68,7 +68,7 @@ class Experiment:
             metrics = self._evaluate()
 
             if self.use_wandb:
-                wandb.log({"eval_" + name: metric for name, metric in metrics.items()})
+                wandb.log({"eval_" + name: metric for name, metric in metrics.items()}, step=epoch)
 
             print(f"Epoch: {epoch} | {metrics}")
 
