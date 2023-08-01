@@ -161,7 +161,11 @@ class Experiment:
 
         # Push metrics
         if self.step % self.log_interval == 0 and push_metrics:
-            wandb.log(metrics, step=self.step)
+            interval_metrics = {m: loss_meters[m].avg for m in self.metrics}
+            wandb.log(interval_metrics, step=self.step)
+
+            for metric in self.metrics:
+                loss_meters[metric].reset()
 
     def _backward_pass(self, loss: torch.Tensor) -> None:
         """Makes a fp16 backward pass. Only updates the optimizer every `accumulation_steps`."""
