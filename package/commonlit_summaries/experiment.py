@@ -69,9 +69,7 @@ class Experiment:
             eval_metrics.append(metrics)
             print(f"Epoch: {epoch} | {metrics}")
 
-            print("AM I USING WANDB?", "YES" if self.use_wandb else "NO")
             if self.use_wandb:
-                print("Logging eval metrics to wandb")
                 wandb.log({"eval_" + name: metric for name, metric in metrics.items()}, step=epoch)
 
             if self.save_strategy == "all":
