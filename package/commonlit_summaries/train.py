@@ -80,6 +80,7 @@ def main(
         accumulation_steps=accumulation_steps,
         save_strategy=save_strategy,
         log_interval=log_interval,
+        use_wandb=True,
     )
     experiment.run()
 
