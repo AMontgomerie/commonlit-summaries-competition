@@ -7,6 +7,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModelForSequenceClassification
+import wandb
 
 from commonlit_summaries.utils import AverageMeter
 
@@ -28,9 +29,11 @@ class Experiment:
         epochs: int,
         accumulation_steps: int,
         save_strategy: str,
+        log_interval: int,
         dataloader_workers: int = 2,
         save_dir: Path = Path("./"),
         device: str = "cuda",
+        use_wandb: bool = True,
     ):
         self.device = device
         self.fold = fold
@@ -52,6 +55,8 @@ class Experiment:
         self.step = 1
         self.metrics = metrics
         self.train_loss_meter = {m: AverageMeter() for m in metrics}
+        self.log_interval = log_interval
+        self.use_wandb = use_wandb
 
     def run(self) -> tuple[AutoModelForSequenceClassification, list[float]]:
         """Trains with the config specified in the constructor."""
@@ -131,11 +136,19 @@ class Experiment:
     def _update_metrics(
         self, loss_meters: dict[str, AverageMeter], losses: torch.Tensor, batch_size
     ) -> None:
+        # Assign names to metrics
         if len(self.metrics) == 1:
-            loss_meters[self.metrics[0]].update(losses.item(), batch_size)
+            metrics = {self.metrics[0]: losses}
         else:
-            for metric, loss in zip(self.metrics, losses):
-                loss_meters[metric].update(loss.item(), batch_size)
+            metrics = {m: l for m, l in zip(self.metrics, losses)}
+
+        # Update local metrics
+        for metric, loss in metrics.items():
+            loss_meters[metric].update(loss.item(), batch_size)
+
+        # Push metrics
+        if self.step % self.log_interval == 0 and self.use_wandb:
+            wandb.log(metrics, step=self.step)
 
     def _backward_pass(self, loss: torch.Tensor) -> None:
         """Makes a fp16 backward pass. Only updates the optimizer every `accumulation_steps`."""

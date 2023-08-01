@@ -5,7 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "commonlit_summaries"
 version = "1.0"
-dependencies = ["pandas", "sentencepiece", "torch", "transformers", "typer"]
+dependencies = [
+    "pandas",
+    "sentencepiece",
+    "torch",
+    "transformers",
+    "typer",
+    "wandb",
+]
 
 [tool.setuptools.packages.find]
 exclude = ["tests"]

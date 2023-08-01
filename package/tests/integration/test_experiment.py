@@ -51,6 +51,8 @@ def test_experiment(mock_data: pd.DataFrame):
             save_strategy="last",
             accumulation_steps=2,
             dataloader_workers=0,
+            use_wandb=False,
+            log_interval=100,
         )
         model, metrics = experiment.run()
 
@@ -100,6 +102,8 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
             save_strategy="all",
             accumulation_steps=2,
             dataloader_workers=0,
+            use_wandb=False,
+            log_interval=100,
         )
         model, metrics = experiment.run()
 

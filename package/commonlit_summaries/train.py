@@ -5,6 +5,7 @@ from torch.optim import AdamW, Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler
 import typer
+import wandb
 
 from commonlit_summaries.data import PromptType, PredictionType, SummaryDataset, load_data
 from commonlit_summaries.experiment import Experiment
@@ -16,6 +17,7 @@ app = typer.Typer(add_completion=False)
 
 @app.command()
 def main(
+    group_id: int = typer.Option(..., "group-id"),
     prompt_type: PromptType = typer.Option(..., "--prompt-type"),
     prediction_type: PredictionType = typer.Option(..., "--prediction-type"),
     fold: str = typer.Option(..., "--fold"),
@@ -34,7 +36,15 @@ def main(
     save_strategy: str = typer.Option("last", "--save-strategy"),
     accumulation_steps: int = typer.Option(1, "--accumulation-steps"),
     loss: str = typer.Option("mse", "--loss"),
+    log_interval: int = typer.Option(100, "--log-interval"),
 ):
+    wandb.login()
+    wandb.init(
+        project="commonlit-summaries",
+        group=str(group_id),
+        name=f"{group_id}-{model_name}-{fold}",
+        config=locals(),
+    )
     device = "cuda"
     set_seed(seed)
     data = load_data(data_dir)
@@ -49,6 +59,7 @@ def main(
     )
     loss_fn, metrics = get_loss_fn(loss)
     model = get_model(model_checkpoint, prediction_type, device)
+    wandb.watch(model, log="all", log_freq=log_interval)
     optimizer = get_optimizer(model, learning_rate)
     epoch_steps = (len(train_dataset) // train_batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(scheduler_name, optimizer, warmup, epochs, epoch_steps)
@@ -68,6 +79,7 @@ def main(
         save_dir=save_dir,
         accumulation_steps=accumulation_steps,
         save_strategy=save_strategy,
+        log_interval=log_interval,
     )
     experiment.run()
 
