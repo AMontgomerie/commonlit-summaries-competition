@@ -66,17 +66,16 @@ class Experiment:
         for epoch in range(1, self.epochs + 1):
             self._train_epoch()
             metrics = self._evaluate()
+            eval_metrics.append(metrics)
+            print(f"Epoch: {epoch} | {metrics}")
 
+            print("AM I USING WANDB?", "YES" if self.use_wandb else "NO")
             if self.use_wandb:
                 print("Logging eval metrics to wandb")
                 wandb.log({"eval_" + name: metric for name, metric in metrics.items()}, step=epoch)
 
-            print(f"Epoch: {epoch} | {metrics}")
-
             if self.save_strategy == "all":
                 self._save(self.fold, epoch)
-
-            eval_metrics.append(metrics)
 
         if self.save_strategy == "last":
             self._save(self.fold, epoch)
