@@ -66,6 +66,10 @@ class Experiment:
         for epoch in range(1, self.epochs + 1):
             self._train_epoch()
             metrics = self._evaluate()
+
+            if self.use_wandb:
+                wandb.log({"eval_" + name: metric for name, metric in metrics.items()})
+
             print(f"Epoch: {epoch} | {metrics}")
 
             if self.save_strategy == "all":
@@ -94,7 +98,7 @@ class Experiment:
 
         with tqdm(total=len(train_loader), unit="batches") as tepoch:
             for batch in train_loader:
-                loss = self._forward_pass(batch, self.train_loss_meter)
+                loss = self._forward_pass(batch, self.train_loss_meter, push_metrics=self.use_wandb)
                 self._backward_pass(loss)
                 tepoch.set_postfix({m: self.train_loss_meter[m].avg for m in self.metrics})
                 tepoch.update(1)
@@ -112,14 +116,17 @@ class Experiment:
         with tqdm(total=len(eval_loader), unit="batches") as tepoch:
             for batch in eval_loader:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
-                self._forward_pass(batch, eval_loss_meter)
+                self._forward_pass(batch, eval_loss_meter, push_metrics=False)
                 tepoch.set_postfix({m: eval_loss_meter[m].avg for m in self.metrics})
                 tepoch.update(1)
 
         return {m: eval_loss_meter[m].avg for m in self.metrics}
 
     def _forward_pass(
-        self, batch: dict[str, torch.Tensor], loss_meter: dict[str, AverageMeter]
+        self,
+        batch: dict[str, torch.Tensor],
+        loss_meter: dict[str, AverageMeter],
+        push_metrics: bool = True,
     ) -> torch.Tensor:
         """Makes a forward pass with fp16 if cuda is available."""
         batch = {k: v.to(self.device) for k, v in batch.items()}
@@ -127,14 +134,20 @@ class Experiment:
         with amp.autocast():
             output = self.model(**batch)
             losses = self.loss_fn(output.logits, batch["labels"])
-            self._update_metrics(loss_meter, losses, batch_size=batch["labels"].shape[0])
+            self._update_metrics(
+                loss_meter, losses, batch_size=batch["labels"].shape[0], push_metrics=push_metrics
+            )
             loss = losses[0] if isinstance(losses, tuple) else losses
             loss = loss / self.accumulation_steps
 
         return loss
 
     def _update_metrics(
-        self, loss_meters: dict[str, AverageMeter], losses: torch.Tensor, batch_size
+        self,
+        loss_meters: dict[str, AverageMeter],
+        losses: torch.Tensor,
+        batch_size,
+        push_metrics: bool = True,
     ) -> None:
         # Assign names to metrics
         if len(self.metrics) == 1:
@@ -147,7 +160,7 @@ class Experiment:
             loss_meters[metric].update(loss.item(), batch_size)
 
         # Push metrics
-        if self.step % self.log_interval == 0 and self.use_wandb:
+        if self.step % self.log_interval == 0 and push_metrics:
             wandb.log(metrics, step=self.step)
 
     def _backward_pass(self, loss: torch.Tensor) -> None:
