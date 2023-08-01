@@ -105,7 +105,7 @@ class Experiment:
                 self.step += 1
 
     @torch.no_grad()
-    def _evaluate(self) -> float:
+    def _evaluate(self) -> dict[str, float]:
         """Evaluates the model on the `eval_dataset` provided and returns the average loss."""
         self.model.eval()
         eval_loader = self._get_dataloader(
