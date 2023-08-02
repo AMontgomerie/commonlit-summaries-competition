@@ -70,9 +70,7 @@ class Experiment:
             print(f"Epoch: {epoch} | {metrics}")
 
             if self.use_wandb:
-                wandb.log(
-                    {"eval_" + name: metric for name, metric in metrics.items()}, step=self.step
-                )
+                wandb.log({"eval_" + name: metric for name, metric in metrics.items()}, step=epoch)
 
             if self.save_strategy == "all":
                 self._save(self.fold, epoch)
