@@ -53,6 +53,7 @@ class Experiment:
         self.save_dir = save_dir
         self.save_strategy = save_strategy
         self.step = 1
+        self.current_epoch = 1
         self.metrics = metrics
         self.train_loss_meter = {m: AverageMeter() for m in metrics}
         self.log_interval = log_interval
@@ -63,23 +64,24 @@ class Experiment:
         print(f"Training {self.fold} for {self.epochs} epochs.")
         eval_metrics = []
 
-        for epoch in range(1, self.epochs + 1):
+        while self.current_epoch <= self.epochs:
             self._train_epoch()
             metrics = self._evaluate()
             eval_metrics.append(metrics)
-            print(f"Epoch: {epoch} | {metrics}")
+            print(f"Epoch: {self.current_epoch} | {metrics}")
 
             if self.use_wandb:
-                wandb.log(
-                    {"eval_" + name + "_epoch": metric for name, metric in metrics.items()},
-                    step=epoch,
-                )
+                metrics = {"epoch": self.current_epoch}
+                metrics = metrics | {"eval_" + name: metric for name, metric in metrics.items()}
+                wandb.log(metrics, step=self.step)
 
             if self.save_strategy == "all":
-                self._save(self.fold, epoch)
+                self._save(self.fold, self.current_epoch)
+
+            self.current_epoch += 1
 
         if self.save_strategy == "last":
-            self._save(self.fold, epoch)
+            self._save(self.fold, self.current_epoch)
 
         print(f"FOLD {self.fold} SUMMARY:")
         print(pd.DataFrame(eval_metrics))
@@ -162,7 +164,8 @@ class Experiment:
 
         # Push metrics
         if self.step % self.log_interval == 0 and push_metrics:
-            interval_metrics = {m: loss_meters[m].avg for m in self.metrics}
+            interval_metrics = {"epoch": self.current_epoch}
+            interval_metrics = interval_metrics | {m: loss_meters[m].avg for m in self.metrics}
             wandb.log(interval_metrics, step=self.step)
 
             for metric in self.metrics:
