@@ -12,7 +12,7 @@ app = typer.Typer(add_completion=False)
 
 @app.command()
 def main(
-    prompt_type: PromptType = typer.Option(..., "--prompt-type"),
+    prompt_types: list[PromptType] = typer.Option(..., "--prompt-type"),
     model_checkpoint: str = typer.Option(..., "--checkpoint"),
     weights_dir: Path = typer.Option(..., "--weights-dir"),
     data_dir: Path = typer.Option("./", "--data-dir"),
@@ -28,7 +28,7 @@ def main(
     for filename in model_weights_files:
         path = weights_dir / filename
         model.load_weights(path)
-        predictions = model.predict(data, batch_size, prompt_type)
+        predictions = model.predict(data, batch_size, prompt_types)
         all_predictions.append(predictions)
 
     mean_predictions = np.mean(all_predictions, axis=0)

@@ -6,10 +6,9 @@ from transformers import AutoTokenizer
 
 
 class PromptType(Enum):
-    none = "none"
+    title = "title"
     question = "question"
     text = "text"
-    both = "both"
 
 
 class PredictionType(Enum):
@@ -23,13 +22,13 @@ class SummaryDataset:
         self,
         tokenizer: AutoTokenizer,
         data: pd.DataFrame,
-        prompt_type: PromptType,
+        prompt_types: list[PromptType] | None = None,
         prediction_type: PredictionType | None = None,
         fix_length: int | None = None,
     ):
         self.tokenizer = tokenizer
         self.data = data
-        self.prompt_type = prompt_type
+        self.prompt_types = prompt_types
         self.prediction_type = prediction_type
         self.fix_length = fix_length
 
@@ -40,17 +39,16 @@ class SummaryDataset:
         sample = self.data.loc[index]
         text = sample.text
 
-        if self.prompt_type != PromptType.none:
-            # Use either the prompt question, the prompt text, or both together as inputs. The
-            # summary text will also be used.
+        # If we're concatenating any prompts onto the text, then add them here.
+        if self.prompt_types is not None:
             sep_token = self.tokenizer.sep_token or "\n\n"
             prompts = {
+                PromptType.title: sample.prompt_title,
                 PromptType.question: sample.prompt_question,
                 PromptType.text: sample.prompt_text,
-                PromptType.both: sample.prompt_text + sep_token + sample.prompt_question,
             }
-            prompt = prompts[self.prompt_type]
-            text += sep_token + prompt
+            for prompt_type in self.prompt_types:
+                text += sep_token + prompts[prompt_type]
 
         # If we're not using a data collator then we can do truncation, padding, and conversion to
         # tensors here.
@@ -66,7 +64,7 @@ class SummaryDataset:
 
         # Otherwise just encode the sequence and leave the rest to the data collator.
         else:
-            inputs = self.tokenizer(text, prompt)
+            inputs = self.tokenizer(text)
 
         # Determine which targets to use.
         if self.prediction_type:
@@ -86,7 +84,7 @@ def load_data(data_dir: Path, train: bool = True):
     prompts = pd.read_csv(data_dir / f"prompts_{split}.csv")
     summaries = pd.read_csv(data_dir / f"summaries_{split}.csv")
     data = summaries.merge(prompts, on="prompt_id")
-    columns = ["student_id", "prompt_id", "prompt_question", "prompt_text", "text"]
+    columns = ["student_id", "prompt_id", "prompt_title", "prompt_question", "prompt_text", "text"]
 
     if train:
         columns += ["content", "wording"]

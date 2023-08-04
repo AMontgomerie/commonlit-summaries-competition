@@ -19,7 +19,11 @@ def test_experiment(mock_data: pd.DataFrame):
     checkpoint = "distilroberta-base"
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
     dataset = SummaryDataset(
-        tokenizer, mock_data, PromptType.both, prediction_type=prediction_type, fix_length=512
+        tokenizer,
+        mock_data,
+        prompt_types=[PromptType.question, PromptType.text],
+        prediction_type=prediction_type,
+        fix_length=512,
     )
     epochs = 2
     batch_size = 4
@@ -70,7 +74,11 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
     checkpoint = "distilroberta-base"
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
     dataset = SummaryDataset(
-        tokenizer, mock_data, PromptType.question, prediction_type=prediction_type, fix_length=512
+        tokenizer,
+        mock_data,
+        prompt_types=[PromptType.title],
+        prediction_type=prediction_type,
+        fix_length=512,
     )
     epochs = 2
     batch_size = 4

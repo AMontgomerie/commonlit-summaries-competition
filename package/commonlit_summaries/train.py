@@ -18,7 +18,7 @@ app = typer.Typer(add_completion=False)
 @app.command()
 def main(
     group_id: int = typer.Option(..., "--group-id"),
-    prompt_type: PromptType = typer.Option(..., "--prompt-type"),
+    prompt_types: list[PromptType] = typer.Option(..., "--prompt-type"),
     prediction_type: PredictionType = typer.Option(..., "--prediction-type"),
     fold: str = typer.Option(..., "--fold"),
     model_name: str = typer.Option(..., "--name"),
@@ -52,10 +52,10 @@ def main(
     valid_data = data.loc[data.prompt_id == fold].reset_index(drop=True)
     tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
     train_dataset = SummaryDataset(
-        tokenizer, train_data, prompt_type, prediction_type, fix_length=max_length
+        tokenizer, train_data, prompt_types, prediction_type, fix_length=max_length
     )
     valid_dataset = SummaryDataset(
-        tokenizer, valid_data, prompt_type, prediction_type, fix_length=max_length
+        tokenizer, valid_data, prompt_types, prediction_type, fix_length=max_length
     )
     loss_fn, metrics = get_loss_fn(loss)
     model = get_model(model_checkpoint, prediction_type, device)

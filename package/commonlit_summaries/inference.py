@@ -28,10 +28,10 @@ class Model:
         self,
         data: pd.DataFrame,
         batch_size: int,
-        prompt_type: PromptType,
+        prompt_types: list[PromptType] | None = None,
         dataloader_num_workers: int = 2,
     ) -> list[float]:
-        dataset = SummaryDataset(self.tokenizer, data, prompt_type, fix_length=self.max_length)
+        dataset = SummaryDataset(self.tokenizer, data, prompt_types, fix_length=self.max_length)
         dataloader = DataLoader(
             dataset,
             batch_size=batch_size,

@@ -38,6 +38,7 @@ def mock_data() -> pd.DataFrame:
         {
             "student_id": [1, 2, 3],
             "prompt_id": [1, 2, 3],
+            "prompt_title": ["f", "f", "f"],
             "prompt_question": ["a", "b", "c"],
             "prompt_text": ["d", "e", "f"],
             "text": ["a", "b", "c"],
