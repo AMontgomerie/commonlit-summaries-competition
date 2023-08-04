@@ -21,7 +21,7 @@ def test_experiment(mock_data: pd.DataFrame):
     dataset = SummaryDataset(
         tokenizer,
         mock_data,
-        prompt_types=[PromptType.question, PromptType.text],
+        prompt_types=[PromptType.summary, PromptType.question, PromptType.text],
         prediction_type=prediction_type,
         fix_length=512,
     )
@@ -76,7 +76,7 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
     dataset = SummaryDataset(
         tokenizer,
         mock_data,
-        prompt_types=[PromptType.title],
+        prompt_types=[PromptType.title, PromptType.summary],
         prediction_type=prediction_type,
         fix_length=512,
     )

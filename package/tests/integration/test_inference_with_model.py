@@ -23,7 +23,10 @@ def data() -> pd.DataFrame:
 
 def test_predict(model: Model, data: pd.DataFrame):
     predictions = model.predict(
-        data, batch_size=4, prompt_types=[PromptType.question], dataloader_num_workers=0
+        data,
+        batch_size=4,
+        prompt_types=[PromptType.summary, PromptType.question],
+        dataloader_num_workers=0,
     )
     assert len(predictions) == len(data)
 

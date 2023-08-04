@@ -6,6 +6,7 @@ from transformers import AutoTokenizer
 
 
 class PromptType(Enum):
+    summary = "summary"
     title = "title"
     question = "question"
     text = "text"
@@ -22,7 +23,7 @@ class SummaryDataset:
         self,
         tokenizer: AutoTokenizer,
         data: pd.DataFrame,
-        prompt_types: list[PromptType] | None = None,
+        prompt_types: list[PromptType],
         prediction_type: PredictionType | None = None,
         fix_length: int | None = None,
     ):
@@ -37,18 +38,15 @@ class SummaryDataset:
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         sample = self.data.loc[index]
-        text = sample.text
-
-        # If we're concatenating any prompts onto the text, then add them here.
-        if self.prompt_types is not None:
-            sep_token = self.tokenizer.sep_token or "\n\n"
-            prompts = {
-                PromptType.title: sample.prompt_title,
-                PromptType.question: sample.prompt_question,
-                PromptType.text: sample.prompt_text,
-            }
-            for prompt_type in self.prompt_types:
-                text += sep_token + prompts[prompt_type]
+        sep_token = self.tokenizer.sep_token or "\n\n"
+        prompts = {
+            PromptType.summary: sample.text,
+            PromptType.title: sample.prompt_title,
+            PromptType.question: sample.prompt_question,
+            PromptType.text: sample.prompt_text,
+        }
+        texts = [prompts[prompt_type] for prompt_type in self.prompt_types]
+        text = sep_token.join(texts)
 
         # If we're not using a data collator then we can do truncation, padding, and conversion to
         # tensors here.

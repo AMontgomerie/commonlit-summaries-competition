@@ -23,6 +23,9 @@ def test_predict(
     )
     model = Model(checkpoint="distilroberta-base", max_length=512, num_labels=2, device="cpu")
     predictions = model.predict(
-        train_data, batch_size=128, dataloader_num_workers=0, prompt_types=[PromptType.text]
+        train_data,
+        batch_size=128,
+        dataloader_num_workers=0,
+        prompt_types=[PromptType.summary, PromptType.question],
     )
     assert len(predictions) == len(train_data)
