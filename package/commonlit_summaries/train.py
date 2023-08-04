@@ -48,6 +48,7 @@ def main(
     device = "cuda"
     set_seed(seed)
     data = load_data(data_dir)
+    print(f"Configuring inputs as: {[p.value for p in prompt_types]}")
     train_data = data.loc[data.prompt_id != fold].reset_index(drop=True)
     valid_data = data.loc[data.prompt_id == fold].reset_index(drop=True)
     tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
