@@ -72,7 +72,7 @@ class Experiment:
 
             if self.use_wandb:
                 metrics = {"epoch": self.current_epoch}
-                metrics = metrics | {"eval_" + name: metric for name, metric in metrics.items()}
+                metrics.update({"eval_" + name: metric for name, metric in metrics.items()})
                 wandb.log(metrics, step=self.step)
 
             if self.save_strategy == "all":
@@ -165,7 +165,7 @@ class Experiment:
         # Push metrics
         if self.step % self.log_interval == 0 and push_metrics:
             interval_metrics = {"epoch": self.current_epoch}
-            interval_metrics = interval_metrics | {m: loss_meters[m].avg for m in self.metrics}
+            interval_metrics.update({m: loss_meters[m].avg for m in self.metrics})
             wandb.log(interval_metrics, step=self.step)
 
             for metric in self.metrics:
