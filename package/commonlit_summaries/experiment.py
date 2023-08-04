@@ -71,9 +71,9 @@ class Experiment:
             print(f"Epoch: {self.current_epoch} | {metrics}")
 
             if self.use_wandb:
-                metrics = {"epoch": self.current_epoch}
-                metrics.update({"eval_" + name: metric for name, metric in metrics.items()})
-                wandb.log(metrics, step=self.step)
+                log_metrics = {"epoch": self.current_epoch}
+                log_metrics.update({"eval_" + name: metric for name, metric in metrics.items()})
+                wandb.log(log_metrics, step=self.step)
 
             if self.save_strategy == "all":
                 self._save(self.fold, self.current_epoch)
