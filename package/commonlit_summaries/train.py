@@ -72,6 +72,7 @@ def main(
     epoch_steps = (len(train_dataset) // train_batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(scheduler_name, optimizer, warmup, epochs, epoch_steps)
     experiment = Experiment(
+        run_id=group_id,
         fold=fold,
         loss_fn=loss_fn,
         model_name=model_name,

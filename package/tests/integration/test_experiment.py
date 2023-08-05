@@ -38,6 +38,7 @@ def test_experiment(mock_data: pd.DataFrame):
 
     with tempfile.TemporaryDirectory() as tempdir:
         experiment = Experiment(
+            run_id="test-run",
             fold="test-fold",
             metrics=metrics,
             loss_fn=loss_fn,
@@ -93,6 +94,7 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
 
     with tempfile.TemporaryDirectory() as tempdir:
         experiment = Experiment(
+            run_id="test-run",
             fold="test-fold",
             loss_fn=loss_fn,
             model_name=checkpoint,
@@ -147,6 +149,7 @@ def test_experiment_no_eval(mock_data: pd.DataFrame):
 
     with tempfile.TemporaryDirectory() as tempdir:
         experiment = Experiment(
+            run_id="test-run",
             fold="test-fold",
             loss_fn=loss_fn,
             model_name=checkpoint,

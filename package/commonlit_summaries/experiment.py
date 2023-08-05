@@ -15,6 +15,7 @@ from commonlit_summaries.utils import AverageMeter
 class Experiment:
     def __init__(
         self,
+        run_id: str,
         fold: str,
         loss_fn: torch.nn.Module,
         metrics: list[str],
@@ -35,6 +36,7 @@ class Experiment:
         device: str = "cuda",
         use_wandb: bool = True,
     ):
+        self.run_id = run_id
         self.device = device
         self.fold = fold
         self.model_name = model_name
@@ -78,12 +80,12 @@ class Experiment:
                     wandb.log(log_metrics, step=self.step)
 
             if self.save_strategy == "all":
-                self._save(self.fold, self.epochs)
+                self._save()
 
             self.current_epoch += 1
 
         if self.save_strategy == "last":
-            self._save(self.fold, self.current_epoch)
+            self._save()
 
         print(f"FOLD {self.fold} SUMMARY:")
         print(pd.DataFrame(eval_metrics))
@@ -194,8 +196,12 @@ class Experiment:
             pin_memory=True,
         )
 
-    def _save(self, fold: str, epoch: int) -> None:
+    def _save(self) -> None:
         model_name = self.model_name.replace("/", "_")
-        file_name = f"{model_name}-fold-{fold}-epoch-{epoch}.bin"
+        strategies = {
+            "all": f"{self.run_id}-{model_name}-{self.fold}-epoch{self.current_epoch}.bin",
+            "last": f"{self.run_id}-{model_name}-{self.fold}.bin",
+        }
+        file_name = strategies[self.save_strategy]
         save_path = self.save_dir / file_name
         torch.save(self.model.state_dict(), save_path)
