@@ -23,7 +23,7 @@ class Experiment:
         optimizer: Optimizer,
         scheduler: LRScheduler,
         train_dataset: Dataset,
-        eval_dataset: Dataset,
+        eval_dataset: Dataset | None,
         train_batch_size: int,
         eval_batch_size: int,
         epochs: int,
@@ -66,14 +66,16 @@ class Experiment:
 
         while self.current_epoch <= self.epochs:
             self._train_epoch()
-            metrics = self._evaluate()
-            eval_metrics.append(metrics)
-            print(f"Epoch: {self.current_epoch} | {metrics}")
 
-            if self.use_wandb:
-                log_metrics = {"epoch": self.current_epoch}
-                log_metrics.update({"eval_" + name: metric for name, metric in metrics.items()})
-                wandb.log(log_metrics, step=self.step)
+            if self.eval_dataset is not None:
+                metrics = self._evaluate()
+                eval_metrics.append(metrics)
+                print(f"Epoch: {self.current_epoch} | {metrics}")
+
+                if self.use_wandb:
+                    log_metrics = {"epoch": self.current_epoch}
+                    log_metrics.update({"eval_" + name: metric for name, metric in metrics.items()})
+                    wandb.log(log_metrics, step=self.step)
 
             if self.save_strategy == "all":
                 self._save(self.fold, self.current_epoch)
