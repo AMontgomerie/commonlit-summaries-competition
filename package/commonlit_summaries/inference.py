@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+from numpy import typing as npt
 from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
@@ -30,7 +32,7 @@ class Model:
         batch_size: int,
         prompt_types: list[PromptType] | None = None,
         dataloader_num_workers: int = 2,
-    ) -> list[float]:
+    ) -> npt.NDArray:
         dataset = SummaryDataset(self.tokenizer, data, prompt_types, fix_length=self.max_length)
         dataloader = DataLoader(
             dataset,
@@ -48,4 +50,4 @@ class Model:
                 predictions += list(output.logits.squeeze().cpu().numpy())
                 tepoch.update(1)
 
-        return predictions
+        return np.array(predictions)
