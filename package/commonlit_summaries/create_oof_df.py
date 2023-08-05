@@ -35,7 +35,7 @@ def main(
 
 def get_weights_file_path(fold: str, weights_dir: Path) -> Path:
     for filename in weights_dir.iterdir():
-        if fold in filename and filename.suffix == ".bin":
+        if fold in str(filename) and filename.suffix == ".bin":
             return filename.absolute()
 
     raise FileNotFoundError(f"Couldn't find a weights file for fold {fold}.")
