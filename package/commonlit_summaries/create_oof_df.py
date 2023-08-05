@@ -1,3 +1,4 @@
+import pandas as pd
 from pathlib import Path
 import typer
 
@@ -20,16 +21,19 @@ def main(
 ):
     data = load_data(data_dir, train=True)
     model = Model(model_checkpoint, max_length, num_labels=2)
+    predictions_by_fold = []
 
     for fold in data.prompt_id.unique():
         path = get_weights_file_path(fold, weights_dir)
         model.load_weights(path)
-        fold_data = data.loc[data.prompt_id == fold]
+        fold_data = data.loc[data.prompt_id == fold].reset_index(drop=True)
         predictions = model.predict(fold_data, batch_size, prompt_types)
         fold_data["predicted_content"] = predictions[:, 0]
         fold_data["predicted_wording"] = predictions[:, 1]
+        predictions_by_fold.append(fold_data)
 
-    data.to_csv(output_dir / f"{model_name}-oof.csv", index=False)
+    all_predictions = pd.concat(predictions_by_fold)
+    all_predictions.to_csv(output_dir / f"{model_name}-oof.csv", index=False)
 
 
 def get_weights_file_path(fold: str, weights_dir: Path) -> Path:
