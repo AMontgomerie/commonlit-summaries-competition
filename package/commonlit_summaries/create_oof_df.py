@@ -19,10 +19,9 @@ def main(
     batch_size: int = typer.Option(32, "--batch-size"),
 ):
     data = load_data(data_dir, train=True)
-    folds = data.prompt_id.unique()
     model = Model(model_checkpoint, max_length, num_labels=2)
 
-    for fold in folds:
+    for fold in data.prompt_id.unique():
         path = get_weights_file_path(fold, weights_dir)
         model.load_weights(path)
         fold_data = data.loc[data.prompt_id == fold]
