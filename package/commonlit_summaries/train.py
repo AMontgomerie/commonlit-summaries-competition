@@ -68,7 +68,6 @@ def main(
 
     loss_fn, metrics = get_loss_fn(loss)
     model = get_model(model_checkpoint, prediction_type, device)
-    wandb.watch(model, log="all", log_freq=log_interval)
     optimizer = get_optimizer(model, learning_rate)
     epoch_steps = (len(train_dataset) // train_batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(scheduler_name, optimizer, warmup, epochs, epoch_steps)
