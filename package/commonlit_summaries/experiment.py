@@ -78,7 +78,7 @@ class Experiment:
                     wandb.log(log_metrics, step=self.step)
 
             if self.save_strategy == "all":
-                self._save(self.fold, self.current_epoch)
+                self._save(self.fold, self.epochs)
 
             self.current_epoch += 1
 
