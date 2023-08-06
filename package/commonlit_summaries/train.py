@@ -1,6 +1,6 @@
 from pathlib import Path
 import torch
-from torch.nn import MSELoss
+from torch.nn import MSELoss, MarginRankingLoss
 from torch.optim import AdamW, Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler
@@ -109,6 +109,7 @@ def get_loss_fn(name: str) -> tuple[torch.nn.Module, list[str]]:
         "mse": (MSELoss, ["MSE"]),
         "rmse": (RMSELoss, ["RMSE"]),
         "mcrmse": (MCRMSELoss, ["MCRMSE", "C", "W"]),
+        "ranking": (MarginRankingLoss),
     }
 
     if name not in losses:

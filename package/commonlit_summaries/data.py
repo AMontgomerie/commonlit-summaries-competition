@@ -77,6 +77,14 @@ class SummaryDataset:
         return inputs
 
 
+class SummaryRankingDataset(SummaryDataset):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
+        return super().__getitem__(index)()
+
+
 def load_data(data_dir: Path, train: bool = True):
     split = "train" if train else "test"
     prompts = pd.read_csv(data_dir / f"prompts_{split}.csv")

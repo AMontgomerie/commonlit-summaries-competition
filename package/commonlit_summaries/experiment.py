@@ -205,3 +205,16 @@ class Experiment:
         file_name = strategies[self.save_strategy]
         save_path = self.save_dir / file_name
         torch.save(self.model.state_dict(), save_path)
+
+
+class RankingExperiment(Experiment):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _forward_pass(
+        self,
+        batch: dict[str, torch.Tensor],
+        loss_meter: dict[str, AverageMeter],
+        push_metrics: bool = True,
+    ) -> torch.Tensor:
+        return super()._forward_pass(batch, loss_meter, push_metrics)()
