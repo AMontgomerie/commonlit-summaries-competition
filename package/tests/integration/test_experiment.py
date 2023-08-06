@@ -3,11 +3,11 @@ import pandas as pd
 from pathlib import Path
 import tempfile
 import torch
-from transformers import AutoTokenizer
 
 from commonlit_summaries.train import get_loss_fn, get_lr_scheduler, get_model, get_optimizer
 from commonlit_summaries.experiment import Experiment
 from commonlit_summaries.data import PromptType, PredictionType, SummaryDataset
+from commonlit_summaries.tokenizer import setup_tokenizer
 
 
 def test_experiment(mock_data: pd.DataFrame):
@@ -17,7 +17,7 @@ def test_experiment(mock_data: pd.DataFrame):
     """
     prediction_type = PredictionType.content
     checkpoint = "distilroberta-base"
-    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+    tokenizer = setup_tokenizer(checkpoint)
     dataset = SummaryDataset(
         tokenizer,
         mock_data,
@@ -29,7 +29,9 @@ def test_experiment(mock_data: pd.DataFrame):
     batch_size = 4
     accumulation_steps = 1
     loss_fn, metrics = get_loss_fn("mse")
-    model = get_model(checkpoint, prediction_type, device="cpu")
+    model = get_model(
+        checkpoint, prediction_type, tokenizer_embedding_size=len(tokenizer), device="cpu"
+    )
     optimizer = get_optimizer(model, learning_rate=1e-5)
     epoch_steps = (len(dataset) // batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(
@@ -73,7 +75,7 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
     """
     prediction_type = PredictionType.both
     checkpoint = "distilroberta-base"
-    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+    tokenizer = setup_tokenizer(checkpoint)
     dataset = SummaryDataset(
         tokenizer,
         mock_data,
@@ -85,7 +87,9 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
     batch_size = 4
     accumulation_steps = 2
     loss_fn, metrics = get_loss_fn("mcrmse")
-    model = get_model(checkpoint, prediction_type, device="cpu")
+    model = get_model(
+        checkpoint, prediction_type, tokenizer_embedding_size=len(tokenizer), device="cpu"
+    )
     optimizer = get_optimizer(model, learning_rate=1e-5)
     epoch_steps = (len(dataset) // batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(
@@ -128,7 +132,7 @@ def test_experiment_no_eval(mock_data: pd.DataFrame):
     """Same as the above test but tests when we use the whole dataset for training, so no eval."""
     prediction_type = PredictionType.both
     checkpoint = "distilroberta-base"
-    tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+    tokenizer = setup_tokenizer(checkpoint)
     dataset = SummaryDataset(
         tokenizer,
         mock_data,
@@ -140,7 +144,9 @@ def test_experiment_no_eval(mock_data: pd.DataFrame):
     batch_size = 4
     accumulation_steps = 2
     loss_fn, metrics = get_loss_fn("mcrmse")
-    model = get_model(checkpoint, prediction_type, device="cpu")
+    model = get_model(
+        checkpoint, prediction_type, tokenizer_embedding_size=len(tokenizer), device="cpu"
+    )
     optimizer = get_optimizer(model, learning_rate=1e-5)
     epoch_steps = (len(dataset) // batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(

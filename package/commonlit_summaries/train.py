@@ -3,7 +3,7 @@ import torch
 from torch.nn import MSELoss, MarginRankingLoss
 from torch.optim import AdamW, Optimizer
 from torch.optim.lr_scheduler import LRScheduler
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler
+from transformers import AutoModelForSequenceClassification, get_scheduler
 import typer
 import wandb
 
@@ -11,6 +11,7 @@ from commonlit_summaries.data import PromptType, PredictionType, SummaryDataset,
 from commonlit_summaries.experiment import Experiment
 from commonlit_summaries.utils import set_seed
 from commonlit_summaries.losses import RMSELoss, MCRMSELoss
+from commonlit_summaries.tokenizer import setup_tokenizer
 
 app = typer.Typer(add_completion=False)
 
@@ -49,7 +50,7 @@ def main(
     set_seed(seed)
     data = load_data(data_dir)
     print(f"Configuring inputs as: {[p.value for p in prompt_types]}")
-    tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
+    tokenizer = setup_tokenizer(model_checkpoint)
 
     if fold == "all":
         train_dataset = SummaryDataset(
@@ -67,7 +68,7 @@ def main(
         )
 
     loss_fn, metrics = get_loss_fn(loss)
-    model = get_model(model_checkpoint, prediction_type, device)
+    model = get_model(model_checkpoint, prediction_type, len(tokenizer), device)
     optimizer = get_optimizer(model, learning_rate)
     epoch_steps = (len(train_dataset) // train_batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(scheduler_name, optimizer, warmup, epochs, epoch_steps)
@@ -95,12 +96,16 @@ def main(
 
 
 def get_model(
-    model_checkpoint: str, prediction_type: PredictionType, device: str
+    model_checkpoint: str,
+    prediction_type: PredictionType,
+    tokenizer_embedding_size: int,
+    device: str,
 ) -> AutoModelForSequenceClassification:
     num_labels = 2 if prediction_type == PredictionType.both else 1
     model = AutoModelForSequenceClassification.from_pretrained(
         model_checkpoint, num_labels=num_labels
     )
+    model.resize_token_embeddings(tokenizer_embedding_size)
     return model.to(device)
 
 

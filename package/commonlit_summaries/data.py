@@ -4,6 +4,8 @@ from pathlib import Path
 import torch
 from transformers import AutoTokenizer
 
+from commonlit_summaries.tokenizer import SPECIAL_TOKENS
+
 
 class PromptType(Enum):
     summary = "summary"
@@ -38,15 +40,14 @@ class SummaryDataset:
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         sample = self.data.loc[index]
-        sep_token = self.tokenizer.sep_token or "\n\n"
         prompts = {
-            PromptType.summary: sample.text,
-            PromptType.title: sample.prompt_title,
-            PromptType.question: sample.prompt_question,
-            PromptType.text: sample.prompt_text,
+            PromptType.summary: SPECIAL_TOKENS["summary"] + " " + sample.text,
+            PromptType.title: SPECIAL_TOKENS["title"] + " " + sample.prompt_title,
+            PromptType.question: SPECIAL_TOKENS["question"] + " " + sample.prompt_question,
+            PromptType.text: SPECIAL_TOKENS["text"] + " " + sample.prompt_text,
         }
         texts = [prompts[prompt_type] for prompt_type in self.prompt_types]
-        text = sep_token.join(texts)
+        text = " ".join(texts)
 
         # If we're not using a data collator then we can do truncation, padding, and conversion to
         # tensors here.
