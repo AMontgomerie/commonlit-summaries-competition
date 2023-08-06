@@ -48,7 +48,12 @@ def main(
     )
     device = "cuda"
     set_seed(seed)
-    data = load_data(data_dir)
+
+    if PromptType.reference_summary in prompt_types:
+        data = load_data(data_dir, summarise=True, truncation=True, device=device)
+    else:
+        data = load_data(data_dir)
+
     print(f"Configuring inputs as: {[p.value for p in prompt_types]}")
     tokenizer = setup_tokenizer(model_checkpoint)
 

@@ -6,6 +6,7 @@ SPECIAL_TOKENS = {
     "text": "<text>",
     "question": "<question>",
     "summary": "<summary>",
+    "reference_summary": "<reference>",
 }
 
 

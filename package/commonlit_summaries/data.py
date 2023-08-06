@@ -2,7 +2,7 @@ from enum import Enum
 import pandas as pd
 from pathlib import Path
 import torch
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, pipeline
 
 from commonlit_summaries.tokenizer import SPECIAL_TOKENS
 
@@ -12,6 +12,7 @@ class PromptType(Enum):
     title = "title"
     question = "question"
     text = "text"
+    reference_summary = "reference_summary"
 
 
 class PredictionType(Enum):
@@ -45,6 +46,9 @@ class SummaryDataset:
             PromptType.title: SPECIAL_TOKENS["title"] + " " + sample.prompt_title,
             PromptType.question: SPECIAL_TOKENS["question"] + " " + sample.prompt_question,
             PromptType.text: SPECIAL_TOKENS["text"] + " " + sample.prompt_text,
+            PromptType.reference_summary: SPECIAL_TOKENS["reference_summary"]
+            + " "
+            + sample.reference_summary,
         }
         texts = [prompts[prompt_type] for prompt_type in self.prompt_types]
         text = " ".join(texts)
@@ -86,15 +90,39 @@ class SummaryRankingDataset(SummaryDataset):
         return super().__getitem__(index)()
 
 
-def load_data(data_dir: Path, train: bool = True):
+def load_data(data_dir: Path, train: bool = True, summarise: bool = False, **summarizer_kwargs):
     split = "train" if train else "test"
     prompts = pd.read_csv(data_dir / f"prompts_{split}.csv")
     summaries = pd.read_csv(data_dir / f"summaries_{split}.csv")
+
+    prompts["reference_summary"] = ""
+
+    if summarise:
+        full_texts = list(prompts.prompt_text)
+        prompts["reference_summary"] = generate_summaries(full_texts, **summarizer_kwargs)
+
     data = summaries.merge(prompts, on="prompt_id")
-    columns = ["student_id", "prompt_id", "prompt_title", "prompt_question", "prompt_text", "text"]
+    columns = [
+        "student_id",
+        "prompt_id",
+        "prompt_title",
+        "prompt_question",
+        "prompt_text",
+        "text",
+        "reference_summary",
+    ]
 
     if train:
         columns += ["content", "wording"]
 
     data = data.loc[:, columns]
     return data
+
+
+def generate_summaries(
+    texts: list[str], checkpoint: str = "facebook/bart-large-cnn", device: str = "cuda"
+) -> pd.DataFrame:
+    device_int = 0 if device == "cuda" else -1
+    summarizer = pipeline("summarization", model=checkpoint, device=device_int)
+    summaries = summarizer(texts, truncation=True)
+    return [s["summary_text"] for s in summaries]

@@ -42,6 +42,7 @@ def mock_data() -> pd.DataFrame:
             "prompt_question": ["a", "b", "c"],
             "prompt_text": ["d", "e", "f"],
             "text": ["a", "b", "c"],
+            "reference_summary": ["", "", ""],
             "content": [0, 0.5, 1],
             "wording": [0, 0.5, 1],
         }
