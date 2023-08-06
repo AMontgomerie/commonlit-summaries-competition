@@ -50,7 +50,7 @@ def main(
     set_seed(seed)
 
     if PromptType.reference_summary in prompt_types:
-        data = load_data(data_dir, summarise=True, truncation=True, device=device)
+        data = load_data(data_dir, summarise=True, device=device)
     else:
         data = load_data(data_dir)
 
