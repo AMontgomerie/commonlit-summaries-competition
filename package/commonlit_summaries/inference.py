@@ -4,7 +4,7 @@ from numpy import typing as npt
 from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification
 
 from commonlit_summaries.data import SummaryDataset, PromptType
 from commonlit_summaries.tokenizer import setup_tokenizer
