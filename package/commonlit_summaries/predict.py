@@ -20,7 +20,7 @@ def main(
     max_length: int = typer.Option(512, "--max-length"),
     batch_size: int = typer.Option(32, "--batch-size"),
 ):
-    data = load_data(data_dir, train=False)
+    data = load_data(data_dir, summarise=PromptType.reference_summary in prompt_types)
     model = Model(model_checkpoint, max_length, num_labels=1)
     all_predictions = {"content": [], "wording": []}
     model_weights_files = [f for f in os.listdir(weights_dir) if f.endswith(".bin")]
