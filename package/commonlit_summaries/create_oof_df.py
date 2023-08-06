@@ -19,7 +19,7 @@ def main(
     max_length: int = typer.Option(512, "--max-length"),
     batch_size: int = typer.Option(32, "--batch-size"),
 ):
-    data = load_data(data_dir, train=True)
+    data = load_data(data_dir, train=True, summarise=PromptType.reference_summary in prompt_types)
     model = Model(model_checkpoint, max_length, num_labels=2)
     predictions_by_fold = []
 
