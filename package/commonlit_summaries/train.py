@@ -40,6 +40,7 @@ def main(
     log_interval: int = typer.Option(100, "--log-interval"),
     summariser_checkpoint: str = typer.Option("facebook/bart-large-cnn", "--summariser-checkpoint"),
     summariser_max_length: int = typer.Option(1024, "--summariser-max-length"),
+    summariser_min_length: int = typer.Option(1024, "--summariser-min-length"),
 ):
     wandb.login()
     wandb.init(
@@ -57,6 +58,7 @@ def main(
         summarise=PromptType.reference_summary in prompt_types,
         checkpoint=summariser_checkpoint,
         max_length=summariser_max_length,
+        min_length=summariser_min_length,
     )
 
     print(f"Configuring inputs as: {[p.value for p in prompt_types]}")
