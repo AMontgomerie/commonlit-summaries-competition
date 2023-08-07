@@ -29,6 +29,9 @@ def mock_model_for_sequence_classification():
         def train(self):
             pass
 
+        def resize_token_embeddings(self, size: int):
+            pass
+
     return MockModel()
 
 
