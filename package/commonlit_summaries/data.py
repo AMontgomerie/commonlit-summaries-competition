@@ -127,5 +127,5 @@ def generate_summaries(
 ) -> pd.DataFrame:
     device_int = 0 if device == "cuda" else -1
     summarizer = pipeline("summarization", model=checkpoint, device=device_int)
-    summaries = summarizer(texts, truncation=True, model_max_length=max_length)
+    summaries = summarizer(texts, truncation=True, max_length=max_length)
     return [s["summary_text"] for s in summaries]
