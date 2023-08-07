@@ -120,9 +120,12 @@ def load_data(data_dir: Path, train: bool = True, summarise: bool = False, **sum
 
 
 def generate_summaries(
-    texts: list[str], checkpoint: str = "facebook/bart-large-cnn", device: str = "cuda"
+    texts: list[str],
+    checkpoint: str = "facebook/bart-large-cnn",
+    max_length: int = 1024,
+    device: str = "cuda",
 ) -> pd.DataFrame:
     device_int = 0 if device == "cuda" else -1
     summarizer = pipeline("summarization", model=checkpoint, device=device_int)
-    summaries = summarizer(texts, truncation=True)
+    summaries = summarizer(texts, truncation=True, model_max_length=max_length)
     return [s["summary_text"] for s in summaries]

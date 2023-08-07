@@ -38,6 +38,8 @@ def main(
     accumulation_steps: int = typer.Option(1, "--accumulation-steps"),
     loss: str = typer.Option("mse", "--loss"),
     log_interval: int = typer.Option(100, "--log-interval"),
+    summariser_checkpoint: str = typer.Option("facebook/bart-large-cnn", "--summariser-checkpoint"),
+    summariser_max_length: int = typer.Option(1024, "--summariser-max-length"),
 ):
     wandb.login()
     wandb.init(
@@ -49,10 +51,13 @@ def main(
     device = "cuda"
     set_seed(seed)
 
-    if PromptType.reference_summary in prompt_types:
-        data = load_data(data_dir, summarise=True, device=device)
-    else:
-        data = load_data(data_dir)
+    data = load_data(
+        data_dir,
+        train=True,
+        summarise=PromptType.reference_summary in prompt_types,
+        checkpoint=summariser_checkpoint,
+        max_length=summariser_max_length,
+    )
 
     print(f"Configuring inputs as: {[p.value for p in prompt_types]}")
     tokenizer = setup_tokenizer(model_checkpoint)

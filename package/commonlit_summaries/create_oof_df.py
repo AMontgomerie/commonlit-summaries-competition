@@ -18,13 +18,15 @@ def main(
     output_dir: Path = typer.Option("./", "--output-dir"),
     max_length: int = typer.Option(512, "--max-length"),
     batch_size: int = typer.Option(32, "--batch-size"),
-    summariser_checkpoint=typer.Option("facebook/bart-large-cnn", "--summariser-checkpoint"),
+    summariser_checkpoint: str = typer.Option("facebook/bart-large-cnn", "--summariser-checkpoint"),
+    summariser_max_length: int = typer.Option(1024, "--summariser-max-length"),
 ):
     data = load_data(
         data_dir,
         train=True,
         summarise=PromptType.reference_summary in prompt_types,
         checkpoint=summariser_checkpoint,
+        max_length=summariser_max_length,
     )
     model = Model(model_checkpoint, max_length, num_labels=2)
     predictions_by_fold = []
