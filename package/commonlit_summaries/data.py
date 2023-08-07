@@ -2,7 +2,7 @@ from enum import Enum
 import pandas as pd
 from pathlib import Path
 import torch
-from transformers import AutoTokenizer, pipeline
+from transformers import AutoTokenizer, pipeline  # , AutoModelForSeq2SeqLM
 
 from commonlit_summaries.tokenizer import SPECIAL_TOKENS
 
@@ -126,7 +126,17 @@ def generate_summaries(
     min_length: int = 56,
     device: str = "cuda",
 ) -> pd.DataFrame:
+    # tokenizer = AutoTokenizer.from_pretrained(checkpoint)
+    # tokenized_inputs = tokenizer(
+    #     texts, truncation=True, max_length=1024, return_tensors="pt", device=device
+    # )
+    # model = AutoModelForSeq2SeqLM.from_pretrained(checkpoint)
+    # model = model.to(device)
+    # outputs = model.generate(tokenized_inputs, min_length=min_length, max_length=max_length)
+    # summaries = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+    # return summaries
+
     device_int = 0 if device == "cuda" else -1
     summarizer = pipeline("summarization", model=checkpoint, device=device_int)
-    summaries = summarizer(texts, truncation=True, max_length=max_length, min_length=min_length)
+    summaries = summarizer(texts, truncation=True, min_length=min_length, max_length=max_length)
     return [s["summary_text"] for s in summaries]
