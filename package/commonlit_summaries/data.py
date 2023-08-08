@@ -138,6 +138,9 @@ def generate_summaries(
         # Don't summarise if the text is already short.
         tokenized_text = tokenizer(text, return_attention_mask=False)
 
+        if isinstance(tokenized_text, dict):
+            tokenized_text = tokenized_text["input_ids"]
+
         if len(tokenized_text) < max_length:
             summaries.append(text)
 

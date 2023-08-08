@@ -38,6 +38,7 @@ def main(
     accumulation_steps: int = typer.Option(1, "--accumulation-steps"),
     loss: str = typer.Option("mse", "--loss"),
     log_interval: int = typer.Option(100, "--log-interval"),
+    weight_decay: float = typer.Option(0.01, "--weight-decay"),
     summariser_checkpoint: str = typer.Option("facebook/bart-large-cnn", "--summariser-checkpoint"),
     summariser_max_length: int = typer.Option(1024, "--summariser-max-length"),
     summariser_min_length: int = typer.Option(1024, "--summariser-min-length"),
@@ -81,7 +82,7 @@ def main(
 
     loss_fn, metrics = get_loss_fn(loss)
     model = get_model(model_checkpoint, prediction_type, len(tokenizer), device)
-    optimizer = get_optimizer(model, learning_rate)
+    optimizer = get_optimizer(model, learning_rate, weight_decay)
     epoch_steps = (len(train_dataset) // train_batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(scheduler_name, optimizer, warmup, epochs, epoch_steps)
     experiment = Experiment(
@@ -136,8 +137,10 @@ def get_loss_fn(name: str) -> tuple[torch.nn.Module, list[str]]:
     return loss_fn(), metrics
 
 
-def get_optimizer(model: AutoModelForSequenceClassification, learning_rate: float) -> Optimizer:
-    return AdamW(model.parameters(), lr=learning_rate)
+def get_optimizer(
+    model: AutoModelForSequenceClassification, learning_rate: float, weight_decay: float
+) -> Optimizer:
+    return AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
 
 def get_lr_scheduler(
