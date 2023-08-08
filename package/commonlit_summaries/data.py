@@ -98,8 +98,11 @@ def load_data(data_dir: Path, train: bool = True, summarise: bool = False, **sum
     prompts["reference_summary"] = ""
 
     if summarise:
+        prompt_ids = list(prompts.prompt_id)
         full_texts = list(prompts.prompt_text)
-        prompts["reference_summary"] = generate_summaries(full_texts, **summarizer_kwargs)
+        prompts["reference_summary"] = generate_summaries(
+            prompt_ids, full_texts, **summarizer_kwargs
+        )
 
     data = summaries.merge(prompts, on="prompt_id")
     columns = [
@@ -120,6 +123,7 @@ def load_data(data_dir: Path, train: bool = True, summarise: bool = False, **sum
 
 
 def generate_summaries(
+    prompt_ids: list[str],
     texts: list[str],
     checkpoint: str = "facebook/bart-large-cnn",
     max_length: int = 1024,
@@ -134,7 +138,7 @@ def generate_summaries(
     )
     summaries = []
 
-    for text in texts:
+    for id, text in zip(prompt_ids, texts):
         # Don't summarise if the text is already short.
         tokenized_text = tokenizer(text, return_attention_mask=False)
 
@@ -142,10 +146,12 @@ def generate_summaries(
             tokenized_text = tokenized_text["input_ids"]
 
         if len(tokenized_text) < max_length:
+            print(f"Prompt {id} is shorter than max summary length {max_length}. Using full text.")
             summaries.append(text)
 
         # If the text is long then shorten it within the specified range.
         else:
+            print(f"Prompt {id} has length {len(tokenized_text)}. Generating summary.")
             summary = summarizer(
                 text, truncation=True, min_length=min_length, max_length=max_length
             )
