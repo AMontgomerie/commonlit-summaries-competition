@@ -2,7 +2,7 @@ from enum import Enum
 import pandas as pd
 from pathlib import Path
 import torch
-from transformers import AutoTokenizer, pipeline  # , AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer, pipeline, AutoModelForSeq2SeqLM
 
 from commonlit_summaries.tokenizer import SPECIAL_TOKENS
 
@@ -124,19 +124,28 @@ def generate_summaries(
     checkpoint: str = "facebook/bart-large-cnn",
     max_length: int = 1024,
     min_length: int = 56,
+    model_max_length: int = 1024,
     device: str = "cuda",
 ) -> pd.DataFrame:
-    # tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-    # tokenized_inputs = tokenizer(
-    #     texts, truncation=True, max_length=1024, return_tensors="pt", device=device
-    # )
-    # model = AutoModelForSeq2SeqLM.from_pretrained(checkpoint)
-    # model = model.to(device)
-    # outputs = model.generate(tokenized_inputs, min_length=min_length, max_length=max_length)
-    # summaries = tokenizer.batch_decode(outputs, skip_special_tokens=True)
-    # return summaries
+    model = AutoModelForSeq2SeqLM.from_pretrained(checkpoint, max_length=model_max_length)
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint, model_max_length=model_max_length)
+    summarizer = pipeline(
+        "summarization", model=model, tokenizer=tokenizer, device=0 if device == "cuda" else -1
+    )
+    summaries = []
 
-    device_int = 0 if device == "cuda" else -1
-    summarizer = pipeline("summarization", model=checkpoint, device=device_int)
-    summaries = summarizer(texts, truncation=True, min_length=min_length, max_length=max_length)
-    return [s["summary_text"] for s in summaries]
+    for text in texts:
+        # Don't summarise if the text is already short.
+        tokenized_text = tokenizer(text, return_attention_mask=False)
+
+        if len(tokenized_text) < max_length:
+            summaries.append(text)
+
+        # If the text is long then shorten it within the specified range.
+        else:
+            summary = summarizer(
+                text, truncation=True, min_length=min_length, max_length=max_length
+            )
+            summaries.append(summary["summary_text"])
+
+    return summaries

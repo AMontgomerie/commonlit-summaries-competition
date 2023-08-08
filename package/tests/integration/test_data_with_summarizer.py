@@ -5,7 +5,15 @@ DATA_DIR = Path(__file__).parents[3] / "data"
 
 
 def test_load_train_data_with_summarise():
-    data = load_data(DATA_DIR, train=True, summarise=True, checkpoint=None, device="cpu")
+    data = load_data(
+        DATA_DIR,
+        train=True,
+        summarise=True,
+        checkpoint="facebook/bart-large-cnn",
+        min_length=56,
+        max_length=128,
+        device="cpu",
+    )
     for column in [
         "student_id",
         "prompt_id",

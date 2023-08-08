@@ -22,6 +22,7 @@ def main(
     summariser_checkpoint: str = typer.Option("facebook/bart-large-cnn", "--summariser-checkpoint"),
     summariser_max_length: int = typer.Option(1024, "--summariser-max-length"),
     summariser_min_length: int = typer.Option(1024, "--summariser-min-length"),
+    device: str = typer.Option("cuda", "--device"),
 ):
     data = load_data(
         data_dir,
@@ -30,8 +31,9 @@ def main(
         checkpoint=summariser_checkpoint,
         max_length=summariser_max_length,
         min_length=summariser_min_length,
+        device=device,
     )
-    model = Model(model_checkpoint, max_length, num_labels=1)
+    model = Model(model_checkpoint, max_length, num_labels=1, device=device)
     all_predictions = {"content": [], "wording": []}
     model_weights_files = [f for f in os.listdir(weights_dir) if f.endswith(".bin")]
 
