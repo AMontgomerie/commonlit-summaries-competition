@@ -6,7 +6,6 @@ from torch.cuda import amp
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader, Dataset
-from transformers import AutoModelForSequenceClassification
 import wandb
 
 from commonlit_summaries.utils import AverageMeter
@@ -20,7 +19,7 @@ class Experiment:
         loss_fn: torch.nn.Module,
         metrics: list[str],
         model_name: str,
-        model: AutoModelForSequenceClassification,
+        model: torch.nn.Module,
         optimizer: Optimizer,
         scheduler: LRScheduler,
         train_dataset: Dataset,
@@ -61,7 +60,7 @@ class Experiment:
         self.log_interval = log_interval
         self.use_wandb = use_wandb
 
-    def run(self) -> tuple[AutoModelForSequenceClassification, list[float]]:
+    def run(self) -> tuple[torch.nn.Module, list[float]]:
         """Trains with the config specified in the constructor."""
         print(f"Training {self.fold} for {self.epochs} epochs.")
         eval_metrics = []
