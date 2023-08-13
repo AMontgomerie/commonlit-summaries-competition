@@ -11,7 +11,7 @@ DATA_DIR = Path(__file__).parents[3] / "data"
 
 @pytest.fixture
 def model():
-    return Model(checkpoint="distilroberta-base", max_length=512, num_labels=1, device="cpu")
+    return Model(checkpoint="distilroberta-base", max_length=512, num_labels=2, device="cpu")
 
 
 @pytest.fixture

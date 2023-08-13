@@ -12,6 +12,7 @@ from commonlit_summaries.experiment import Experiment
 from commonlit_summaries.utils import set_seed
 from commonlit_summaries.losses import RMSELoss, MCRMSELoss
 from commonlit_summaries.tokenizer import setup_tokenizer
+from commonlit_summaries.models import GemTextPoolerModel
 
 app = typer.Typer(add_completion=False)
 
@@ -42,6 +43,7 @@ def main(
     summariser_checkpoint: str = typer.Option("facebook/bart-large-cnn", "--summariser-checkpoint"),
     summariser_max_length: int = typer.Option(1024, "--summariser-max-length"),
     summariser_min_length: int = typer.Option(1024, "--summariser-min-length"),
+    use_pooler: bool = typer.Option(False, "--use-pooler"),
 ):
     wandb.login()
     wandb.init(
@@ -81,7 +83,7 @@ def main(
         )
 
     loss_fn, metrics = get_loss_fn(loss)
-    model = get_model(model_checkpoint, prediction_type, len(tokenizer), device)
+    model = get_model(model_checkpoint, prediction_type, len(tokenizer), use_pooler, device)
     optimizer = get_optimizer(model, learning_rate, weight_decay)
     epoch_steps = (len(train_dataset) // train_batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(scheduler_name, optimizer, warmup, epochs, epoch_steps)
@@ -112,13 +114,20 @@ def get_model(
     model_checkpoint: str,
     prediction_type: PredictionType,
     tokenizer_embedding_size: int,
-    device: str,
+    use_pooler: bool = False,
+    device: str = "cuda",
 ) -> AutoModelForSequenceClassification:
     num_labels = 2 if prediction_type == PredictionType.both else 1
-    model = AutoModelForSequenceClassification.from_pretrained(
-        model_checkpoint, num_labels=num_labels
-    )
-    model.resize_token_embeddings(tokenizer_embedding_size)
+
+    if use_pooler:
+        model = GemTextPoolerModel(model_checkpoint, num_labels)
+        model.transformer.resize_token_embeddings(tokenizer_embedding_size)
+    else:
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_checkpoint, num_labels=num_labels
+        )
+        model.resize_token_embeddings(tokenizer_embedding_size)
+
     return model.to(device)
 
 

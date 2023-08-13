@@ -138,7 +138,9 @@ class Experiment:
         batch = {k: v.to(self.device) for k, v in batch.items()}
 
         with amp.autocast():
-            output = self.model(**batch)
+            output = self.model(
+                input_ids=batch["input_ids"], attention_mask=batch["attention_mask"]
+            )
             losses = self.loss_fn(output.logits, batch["labels"])
             self._update_metrics(
                 loss_meter, losses, batch_size=batch["labels"].shape[0], push_metrics=push_metrics
