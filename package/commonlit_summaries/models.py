@@ -32,6 +32,8 @@ class Output:
 
 
 class GemTextPoolerModel(torch.nn.Module):
+    """A transformer model with a GemText pooling layer before the regression head."""
+
     def __init__(self, checkpoint: str, num_labels: int):
         super().__init__()
         config = AutoConfig.from_pretrained(checkpoint)
