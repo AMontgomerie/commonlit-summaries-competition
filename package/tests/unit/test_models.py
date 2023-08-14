@@ -1,6 +1,6 @@
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-from commonlit_summaries.models import CommonlitRegressorModel
+from commonlit_summaries.models import CommonlitRegressorModel, MeanPooling
 
 
 def test_model_output_shape():
@@ -10,7 +10,8 @@ def test_model_output_shape():
     checkpoint = "distilroberta-base"
     num_labels = 2
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-    model = CommonlitRegressorModel(checkpoint, num_labels=num_labels)
+    pooler = MeanPooling()
+    model = CommonlitRegressorModel(checkpoint, num_labels=num_labels, pooler=pooler)
     hf_model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels=num_labels)
 
     text = "This is some text used as an input to the model."
@@ -25,7 +26,10 @@ def test_model_output_shape_with_attention_head():
     checkpoint = "distilroberta-base"
     num_labels = 2
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-    model = CommonlitRegressorModel(checkpoint, num_labels=num_labels, use_attention_head=True)
+    pooler = MeanPooling()
+    model = CommonlitRegressorModel(
+        checkpoint, num_labels=num_labels, use_attention_head=True, pooler=pooler
+    )
     hf_model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels=num_labels)
 
     text = "This is some text used as an input to the model."

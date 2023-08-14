@@ -1,6 +1,6 @@
 from pathlib import Path
 import torch
-from torch.nn import MSELoss, MarginRankingLoss
+from torch.nn import MSELoss, MarginRankingLoss, SmoothL1Loss
 from torch.optim import AdamW, Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from transformers import AutoModelForSequenceClassification, get_scheduler
@@ -12,7 +12,12 @@ from commonlit_summaries.experiment import Experiment
 from commonlit_summaries.utils import set_seed
 from commonlit_summaries.losses import RMSELoss, MCRMSELoss
 from commonlit_summaries.tokenizer import setup_tokenizer
-from commonlit_summaries.models import CommonlitRegressorModel
+from commonlit_summaries.models import (
+    CommonlitRegressorModel,
+    MeanPooling,
+    MaxPooling,
+    GeMTextPooling,
+)
 
 app = typer.Typer(add_completion=False)
 
@@ -43,11 +48,8 @@ def main(
     summariser_checkpoint: str = typer.Option("facebook/bart-large-cnn", "--summariser-checkpoint"),
     summariser_max_length: int = typer.Option(1024, "--summariser-max-length"),
     summariser_min_length: int = typer.Option(1024, "--summariser-min-length"),
-    use_pooler: bool = typer.Option(False, "--use-pooler"),
+    pooler: str = typer.Option("mean", "--pooler"),
     use_attention_head: bool = typer.Option(False, "--use-attention-head"),
-    use_hf_head: bool = typer.Option(
-        False, "--use-hf-head"
-    ),  # use a HF SequenceClassification head, overrules pooler and attn head
 ):
     wandb.login()
     wandb.init(
@@ -85,14 +87,14 @@ def main(
             tokenizer, valid_data, prompt_types, prediction_type, fix_length=max_length
         )
 
-    loss_fn, metrics = get_loss_fn(loss)
+    num_labels = 2 if prediction_type == PredictionType.both else 1
+    loss_fn, metrics = get_loss_fn(loss, num_labels)
     model = get_model(
         model_checkpoint,
-        prediction_type,
+        num_labels,
         tokenizer_embedding_size=len(tokenizer),
-        use_pooler=use_pooler,
+        pooler=pooler,
         use_attention_head=use_attention_head,
-        hf_head=use_hf_head,
         device="cuda",
     )
     optimizer = get_optimizer(model, learning_rate, weight_decay)
@@ -123,41 +125,54 @@ def main(
 
 def get_model(
     model_checkpoint: str,
-    prediction_type: PredictionType,
+    num_labels: int,
     tokenizer_embedding_size: int,
-    use_pooler: bool = False,
+    pooler: str,
     use_attention_head: bool = False,
-    hf_head: bool = False,
     device: str = "cuda",
 ) -> AutoModelForSequenceClassification:
-    num_labels = 2 if prediction_type == PredictionType.both else 1
-
-    if hf_head:
+    if pooler == "hf":
         model = AutoModelForSequenceClassification.from_pretrained(
             model_checkpoint, num_labels=num_labels
         )
     else:
+        pooler_layer = _get_pooling_layer(pooler)
         model = CommonlitRegressorModel(
-            model_checkpoint, num_labels, use_pooler, use_attention_head
+            model_checkpoint, num_labels, pooler_layer, use_attention_head
         )
 
     model.resize_token_embeddings(tokenizer_embedding_size)
     return model.to(device)
 
 
-def get_loss_fn(name: str) -> tuple[torch.nn.Module, list[str]]:
+def _get_pooling_layer(pooler_name: str) -> torch.nn.Module:
+    pooling_layers = {"mean": MeanPooling, "max": MaxPooling, "gemtext": GeMTextPooling}
+    if pooler_name not in pooling_layers:
+        raise ValueError(f"Unknown pooling layer {pooler_name}.")
+
+    return pooling_layers[pooler_name]()
+
+
+def get_loss_fn(name: str, num_labels: int) -> tuple[torch.nn.Module, list[str]]:
     losses = {
         "mse": (MSELoss, ["MSE"]),
         "rmse": (RMSELoss, ["RMSE"]),
         "mcrmse": (MCRMSELoss, ["MCRMSE", "C", "W"]),
         "ranking": (MarginRankingLoss),
+        "smoothl1": (SmoothL1Loss, ["SmoothL1"]),
     }
 
     if name not in losses:
         raise ValueError(f"{name} is not a valid loss function.")
 
     loss_fn, metrics = losses[name]
-    return loss_fn(), metrics
+
+    if num_labels > 1 and name in ["mse", "rmse", "smoothl1"]:
+        criterion = loss_fn(reduction="mean")
+    else:
+        criterion = loss_fn()
+
+    return criterion, metrics
 
 
 def get_optimizer(

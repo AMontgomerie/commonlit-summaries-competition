@@ -28,9 +28,14 @@ def test_experiment(mock_data: pd.DataFrame):
     epochs = 2
     batch_size = 4
     accumulation_steps = 1
-    loss_fn, metrics = get_loss_fn("mse")
+    num_labels = 1
+    loss_fn, metrics = get_loss_fn("mse", num_labels)
     model = get_model(
-        checkpoint, prediction_type, tokenizer_embedding_size=len(tokenizer), device="cpu"
+        checkpoint,
+        num_labels,
+        tokenizer_embedding_size=len(tokenizer),
+        pooler="mean",
+        device="cpu",
     )
     optimizer = get_optimizer(model, learning_rate=1e-5, weight_decay=0.01)
     epoch_steps = (len(dataset) // batch_size) // accumulation_steps
@@ -86,9 +91,14 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
     epochs = 2
     batch_size = 4
     accumulation_steps = 2
-    loss_fn, metrics = get_loss_fn("mcrmse")
+    num_labels = 2
+    loss_fn, metrics = get_loss_fn("mcrmse", num_labels)
     model = get_model(
-        checkpoint, prediction_type, tokenizer_embedding_size=len(tokenizer), device="cpu"
+        checkpoint,
+        num_labels,
+        tokenizer_embedding_size=len(tokenizer),
+        pooler="max",
+        device="cpu",
     )
     optimizer = get_optimizer(model, learning_rate=1e-5, weight_decay=0.01)
     epoch_steps = (len(dataset) // batch_size) // accumulation_steps
@@ -143,9 +153,14 @@ def test_experiment_no_eval(mock_data: pd.DataFrame):
     epochs = 2
     batch_size = 4
     accumulation_steps = 2
-    loss_fn, metrics = get_loss_fn("mcrmse")
+    num_labels = 2
+    loss_fn, metrics = get_loss_fn("mcrmse", num_labels)
     model = get_model(
-        checkpoint, prediction_type, tokenizer_embedding_size=len(tokenizer), device="cpu"
+        checkpoint,
+        num_labels,
+        tokenizer_embedding_size=len(tokenizer),
+        pooler="mean",
+        device="cpu",
     )
     optimizer = get_optimizer(model, learning_rate=1e-5, weight_decay=0.01)
     epoch_steps = (len(dataset) // batch_size) // accumulation_steps
@@ -201,12 +216,13 @@ def test_experiment_both_mcrmse_hfhead(mock_data: pd.DataFrame):
     epochs = 2
     batch_size = 4
     accumulation_steps = 2
-    loss_fn, metrics = get_loss_fn("mcrmse")
+    num_labels = 2
+    loss_fn, metrics = get_loss_fn("mcrmse", num_labels)
     model = get_model(
         checkpoint,
-        prediction_type,
+        num_labels,
         tokenizer_embedding_size=len(tokenizer),
-        hf_head=True,
+        pooler="hf",
         device="cpu",
     )
     optimizer = get_optimizer(model, learning_rate=1e-5, weight_decay=0.01)
@@ -262,12 +278,13 @@ def test_experiment_both_mcrmse_gemtext(mock_data: pd.DataFrame):
     epochs = 2
     batch_size = 4
     accumulation_steps = 2
-    loss_fn, metrics = get_loss_fn("mcrmse")
+    num_labels = 2
+    loss_fn, metrics = get_loss_fn("mcrmse", num_labels)
     model = get_model(
         checkpoint,
-        prediction_type,
+        num_labels,
         tokenizer_embedding_size=len(tokenizer),
-        use_pooler=True,
+        pooler="gemtext",
         device="cpu",
     )
     optimizer = get_optimizer(model, learning_rate=1e-5, weight_decay=0.01)
@@ -323,11 +340,13 @@ def test_experiment_both_mcrmse_attentionhead(mock_data: pd.DataFrame):
     epochs = 2
     batch_size = 4
     accumulation_steps = 2
-    loss_fn, metrics = get_loss_fn("mcrmse")
+    num_labels = 2
+    loss_fn, metrics = get_loss_fn("mcrmse", num_labels)
     model = get_model(
         checkpoint,
-        prediction_type,
+        num_labels,
         tokenizer_embedding_size=len(tokenizer),
+        pooler="mean",
         use_attention_head=True,
         device="cpu",
     )

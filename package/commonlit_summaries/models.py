@@ -17,7 +17,43 @@ class AttentionHead(torch.nn.Module):
         return context_vector
 
 
-class GeMText(torch.nn.Module):
+class MeanPooling(torch.nn.Module):
+    """Based on https://www.kaggle.com/code/asteyagaur/commonlit-deberta-v3"""
+
+    def __init__(self, epsilon: float = 1e-9):
+        super().__init__()
+        self.epsilon = epsilon
+
+    def forward(
+        self, last_hidden_state: torch.Tensor, attention_mask: torch.Tensor
+    ) -> torch.Tensor:
+        attention_mask_expanded = (
+            attention_mask.unsqueeze(-1).expand(last_hidden_state.size()).float()
+        )
+        sum_embeddings = torch.sum(last_hidden_state * attention_mask_expanded, 1)
+        sum_mask = attention_mask_expanded.sum(1)
+        sum_mask = torch.clamp(sum_mask, min=self.epsilon)
+        return sum_embeddings / sum_mask
+
+
+class MaxPooling(torch.nn.Module):
+    """Based on https://www.kaggle.com/code/asteyagaur/commonlit-deberta-v3"""
+
+    def __init__(self, epsilon: float = 1e-9):
+        super().__init__()
+        self.epsilon = epsilon
+
+    def forward(self, last_hidden_state, attention_mask):
+        attention_mask_expanded = (
+            attention_mask.unsqueeze(-1).expand(last_hidden_state.size()).float()
+        )
+        embeddings = last_hidden_state.clone()
+        embeddings[attention_mask_expanded == 0] = -self.epsilon
+        max_embeddings, _ = torch.max(embeddings, dim=1)
+        return max_embeddings
+
+
+class GeMTextPooling(torch.nn.Module):
     """Based on https://www.kaggle.com/code/asteyagaur/commonlit-deberta-v3"""
 
     def __init__(self, dim: int = 1, p: int = 3, epsilon: int = 1e-6):
@@ -50,18 +86,15 @@ class CommonlitRegressorModel(torch.nn.Module):
         self,
         checkpoint: str,
         num_labels: int,
-        use_pooler: bool = False,
+        pooler: torch.nn.Module,
         use_attention_head: bool = False,
     ):
         super().__init__()
         config = AutoConfig.from_pretrained(checkpoint)
         self.transformer = AutoModel.from_pretrained(checkpoint, config=config)
         self.regressor = torch.nn.Linear(config.hidden_size, num_labels)
-        self.use_pooler = use_pooler
         self.use_attention_head = use_attention_head
-
-        if self.use_pooler:
-            self.pooler = GeMText()
+        self.pooler = pooler
 
         if self.use_attention_head:
             self.attention_head = AttentionHead(
@@ -70,15 +103,12 @@ class CommonlitRegressorModel(torch.nn.Module):
 
     def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> Output:
         transformer_output = self.transformer(input_ids, attention_mask, output_hidden_states=False)
-
-        if self.use_pooler:
-            pooled_output = self.pooler(transformer_output.last_hidden_state, attention_mask)
-        else:
-            pooled_output = transformer_output.pooler_output
+        sequence_output = transformer_output.last_hidden_state
 
         if self.use_attention_head:
-            pooled_output = self.attention_head(pooled_output)
+            sequence_output = self.attention_head(sequence_output)
 
+        pooled_output = self.pooler(sequence_output, attention_mask)
         regressor_output = self.regressor(pooled_output)
         return Output(regressor_output)
 
