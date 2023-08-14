@@ -12,7 +12,7 @@ from commonlit_summaries.experiment import Experiment
 from commonlit_summaries.utils import set_seed
 from commonlit_summaries.losses import RMSELoss, MCRMSELoss
 from commonlit_summaries.tokenizer import setup_tokenizer
-from commonlit_summaries.models import GemTextPoolerModel
+from commonlit_summaries.models import CommonlitRegressorModel
 
 app = typer.Typer(add_completion=False)
 
@@ -44,6 +44,7 @@ def main(
     summariser_max_length: int = typer.Option(1024, "--summariser-max-length"),
     summariser_min_length: int = typer.Option(1024, "--summariser-min-length"),
     use_pooler: bool = typer.Option(False, "--use-pooler"),
+    use_attention_head: bool = typer.Option(False, "--use-attention-head"),
 ):
     wandb.login()
     wandb.init(
@@ -83,7 +84,15 @@ def main(
         )
 
     loss_fn, metrics = get_loss_fn(loss)
-    model = get_model(model_checkpoint, prediction_type, len(tokenizer), use_pooler, device)
+    model = get_model(
+        model_checkpoint,
+        prediction_type,
+        tokenizer_embedding_size=len(tokenizer),
+        use_pooler=use_pooler,
+        use_attention_head=use_attention_head,
+        hf_head=False,
+        device="cuda",
+    )
     optimizer = get_optimizer(model, learning_rate, weight_decay)
     epoch_steps = (len(train_dataset) // train_batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(scheduler_name, optimizer, warmup, epochs, epoch_steps)
@@ -115,19 +124,22 @@ def get_model(
     prediction_type: PredictionType,
     tokenizer_embedding_size: int,
     use_pooler: bool = False,
+    use_attention_head: bool = False,
+    hf_head: bool = False,
     device: str = "cuda",
 ) -> AutoModelForSequenceClassification:
     num_labels = 2 if prediction_type == PredictionType.both else 1
 
-    if use_pooler:
-        model = GemTextPoolerModel(model_checkpoint, num_labels)
-        model.transformer.resize_token_embeddings(tokenizer_embedding_size)
-    else:
+    if hf_head:
         model = AutoModelForSequenceClassification.from_pretrained(
             model_checkpoint, num_labels=num_labels
         )
-        model.resize_token_embeddings(tokenizer_embedding_size)
+    else:
+        model = CommonlitRegressorModel(
+            model_checkpoint, num_labels, use_pooler, use_attention_head
+        )
 
+    model.resize_token_embeddings(tokenizer_embedding_size)
     return model.to(device)
 
 
