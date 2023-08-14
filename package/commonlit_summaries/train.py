@@ -45,6 +45,9 @@ def main(
     summariser_min_length: int = typer.Option(1024, "--summariser-min-length"),
     use_pooler: bool = typer.Option(False, "--use-pooler"),
     use_attention_head: bool = typer.Option(False, "--use-attention-head"),
+    use_hf_head: bool = typer.Option(
+        False, "--use-hf-head"
+    ),  # use a HF SequenceClassification head, overrules pooler and attn head
 ):
     wandb.login()
     wandb.init(
@@ -89,7 +92,7 @@ def main(
         tokenizer_embedding_size=len(tokenizer),
         use_pooler=use_pooler,
         use_attention_head=use_attention_head,
-        hf_head=False,
+        hf_head=use_hf_head,
         device="cuda",
     )
     optimizer = get_optimizer(model, learning_rate, weight_decay)
