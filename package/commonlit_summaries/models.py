@@ -70,15 +70,16 @@ class CommonlitRegressorModel(torch.nn.Module):
 
     def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> Output:
         transformer_output = self.transformer(input_ids, attention_mask, output_hidden_states=False)
-        output = transformer_output.last_hidden_state
 
         if self.use_pooler:
-            output = self.pooler(output, attention_mask)
+            pooled_output = self.pooler(transformer_output.last_hidden_state, attention_mask)
+        else:
+            pooled_output = transformer_output.pooler_output
 
         if self.use_attention_head:
-            output = self.attention_head(output)
+            pooled_output = self.attention_head(pooled_output)
 
-        regressor_output = self.regressor(output)
+        regressor_output = self.regressor(pooled_output)
         return Output(regressor_output)
 
     def resize_token_embeddings(self, size: int) -> None:

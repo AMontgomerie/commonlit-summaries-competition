@@ -53,7 +53,6 @@ def main(
         name=f"{group_id}-{model_name}-{fold}",
         config=locals(),
     )
-    device = "cuda"
     set_seed(seed)
 
     data = load_data(
