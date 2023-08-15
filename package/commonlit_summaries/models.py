@@ -92,9 +92,10 @@ class CommonlitRegressorModel(torch.nn.Module):
         super().__init__()
         config = AutoConfig.from_pretrained(checkpoint)
         self.transformer = AutoModel.from_pretrained(checkpoint, config=config)
+        self.pooler = pooler
+        self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
         self.regressor = torch.nn.Linear(config.hidden_size, num_labels)
         self.use_attention_head = use_attention_head
-        self.pooler = pooler
 
         if self.use_attention_head:
             self.attention_head = AttentionHead(
@@ -109,6 +110,7 @@ class CommonlitRegressorModel(torch.nn.Module):
             sequence_output = self.attention_head(sequence_output)
 
         pooled_output = self.pooler(sequence_output, attention_mask)
+        pooled_output = self.dropout(pooled_output)
         regressor_output = self.regressor(pooled_output)
         return Output(regressor_output)
 
