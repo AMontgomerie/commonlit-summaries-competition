@@ -50,7 +50,7 @@ def main(
     summariser_min_length: int = typer.Option(1024, "--summariser-min-length"),
     pooler: str = typer.Option("mean", "--pooler"),
     use_attention_head: bool = typer.Option(False, "--use-attention-head"),
-    dropout: bool = typer.Option(0.1, "--dropout"),
+    dropout: float = typer.Option(0.1, "--dropout"),
 ):
     wandb.login()
     wandb.init(
