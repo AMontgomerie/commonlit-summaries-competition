@@ -94,7 +94,7 @@ def main(
         model_checkpoint,
         num_labels,
         tokenizer_embedding_size=len(tokenizer),
-        drpoout=dropout,
+        dropout=dropout,
         pooler=pooler,
         use_attention_head=use_attention_head,
         device="cuda",
