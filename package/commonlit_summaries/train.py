@@ -50,6 +50,7 @@ def main(
     summariser_min_length: int = typer.Option(1024, "--summariser-min-length"),
     pooler: str = typer.Option("mean", "--pooler"),
     use_attention_head: bool = typer.Option(False, "--use-attention-head"),
+    dropout: bool = typer.Option(0.1, "--dropout"),
 ):
     wandb.login()
     wandb.init(
@@ -93,6 +94,7 @@ def main(
         model_checkpoint,
         num_labels,
         tokenizer_embedding_size=len(tokenizer),
+        drpoout=dropout,
         pooler=pooler,
         use_attention_head=use_attention_head,
         device="cuda",
@@ -127,13 +129,14 @@ def get_model(
     model_checkpoint: str,
     num_labels: int,
     tokenizer_embedding_size: int,
+    dropout: float,
     pooler: str,
     use_attention_head: bool = False,
     device: str = "cuda",
 ) -> AutoModelForSequenceClassification:
     if pooler == "hf":
         model = AutoModelForSequenceClassification.from_pretrained(
-            model_checkpoint, num_labels=num_labels
+            model_checkpoint, num_labels=num_labels, hidden_dropout_prob=dropout
         )
     else:
         pooler_layer = _get_pooling_layer(pooler)
