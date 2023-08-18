@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 import torch
-from transformers import AutoModel, AutoConfig
+from transformers import AutoModel, AutoConfig, PretrainedConfig
+from transformers.models.deberta.modeling_deberta import StableDropout, ContextPooler
+from typing import Any
 
 
 class AttentionHead(torch.nn.Module):
@@ -20,7 +22,7 @@ class AttentionHead(torch.nn.Module):
 class MeanPooling(torch.nn.Module):
     """Based on https://www.kaggle.com/code/asteyagaur/commonlit-deberta-v3"""
 
-    def __init__(self, epsilon: float = 1e-9):
+    def __init__(self, config: PretrainedConfig, epsilon: float = 1e-9):
         super().__init__()
         self.epsilon = epsilon
 
@@ -39,7 +41,7 @@ class MeanPooling(torch.nn.Module):
 class MaxPooling(torch.nn.Module):
     """Based on https://www.kaggle.com/code/asteyagaur/commonlit-deberta-v3"""
 
-    def __init__(self, epsilon: float = 1e-9):
+    def __init__(self, config: PretrainedConfig, epsilon: float = 1e-9):
         super().__init__()
         self.epsilon = epsilon
 
@@ -56,7 +58,7 @@ class MaxPooling(torch.nn.Module):
 class GeMTextPooling(torch.nn.Module):
     """Based on https://www.kaggle.com/code/asteyagaur/commonlit-deberta-v3"""
 
-    def __init__(self, dim: int = 1, p: int = 3, epsilon: int = 1e-6):
+    def __init__(self, config: PretrainedConfig, dim: int = 1, p: int = 3, epsilon: int = 1e-6):
         super().__init__()
         self.dim = dim
         self.p = torch.nn.parameter.Parameter(torch.ones(1) * p)
@@ -70,6 +72,19 @@ class GeMTextPooling(torch.nn.Module):
         x = (clamped_hidden_state * attention_mask_expanded).pow(self.p).sum(self.dim)
         ret = x / attention_mask_expanded.sum(self.dim).clip(min=self.epsilon)
         return ret.pow(1 / self.p)
+
+
+class ContextPooling(torch.nn.Module):
+    """Wrapper around transformers.models.deberta.modeling_deberta.ContextPooler so it matches our
+    other poolers.
+    """
+
+    def __init__(self, config: PretrainedConfig):
+        super().__init__()
+        self.pooler = ContextPooler(config)
+
+    def forward(self, hidden_states: torch.Tensor, _: torch.Tensor) -> torch.Tensor:
+        return self.pooler(hidden_states)
 
 
 @dataclass
@@ -86,15 +101,16 @@ class CommonlitRegressorModel(torch.nn.Module):
         self,
         checkpoint: str,
         num_labels: int,
-        pooler: torch.nn.Module,
+        pooler_cls: type[torch.nn.Module],
         use_attention_head: bool = False,
+        **kwargs: dict[str, Any],
     ):
         super().__init__()
-        config = AutoConfig.from_pretrained(checkpoint)
+        config = AutoConfig.from_pretrained(checkpoint, **kwargs)
         self.transformer = AutoModel.from_pretrained(checkpoint, config=config)
-        self.pooler = pooler
-        self.dropout = torch.nn.Dropout(config.hidden_dropout_prob)
+        self.pooler = pooler_cls(config)
         self.regressor = torch.nn.Linear(config.hidden_size, num_labels)
+        self.dropout = StableDropout(config.hidden_dropout_prob)
         self.use_attention_head = use_attention_head
 
         if self.use_attention_head:

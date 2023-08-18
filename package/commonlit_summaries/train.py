@@ -17,6 +17,7 @@ from commonlit_summaries.models import (
     MeanPooling,
     MaxPooling,
     GeMTextPooling,
+    ContextPooling,
 )
 
 app = typer.Typer(add_completion=False)
@@ -50,7 +51,8 @@ def main(
     summariser_min_length: int = typer.Option(1024, "--summariser-min-length"),
     pooler: str = typer.Option("mean", "--pooler"),
     use_attention_head: bool = typer.Option(False, "--use-attention-head"),
-    dropout: float = typer.Option(0.1, "--dropout"),
+    hidden_dropout_prob: float = typer.Option(0.1, "--hidden-dropout"),
+    attention_probs_dropout_prob: float = typer.Option(0.1, "--attention-dropout"),
 ):
     wandb.login()
     wandb.init(
@@ -94,7 +96,8 @@ def main(
         model_checkpoint,
         num_labels,
         tokenizer_embedding_size=len(tokenizer),
-        dropout=dropout,
+        hidden_dropout_prob=hidden_dropout_prob,
+        attention_probs_dropout_prob=attention_probs_dropout_prob,
         pooler=pooler,
         use_attention_head=use_attention_head,
         device="cuda",
@@ -129,31 +132,45 @@ def get_model(
     model_checkpoint: str,
     num_labels: int,
     tokenizer_embedding_size: int,
-    dropout: float,
+    hidden_dropout_prob: float,
+    attention_probs_dropout_prob: float,
     pooler: str,
     use_attention_head: bool = False,
     device: str = "cuda",
 ) -> AutoModelForSequenceClassification:
     if pooler == "hf":
         model = AutoModelForSequenceClassification.from_pretrained(
-            model_checkpoint, num_labels=num_labels, hidden_dropout_prob=dropout
+            model_checkpoint,
+            num_labels=num_labels,
+            hidden_dropout_prob=hidden_dropout_prob,
+            attention_probs_dropout_prob=attention_probs_dropout_prob,
         )
     else:
         pooler_layer = _get_pooling_layer(pooler)
         model = CommonlitRegressorModel(
-            model_checkpoint, num_labels, pooler_layer, use_attention_head
+            model_checkpoint,
+            num_labels,
+            pooler_layer,
+            use_attention_head,
+            hidden_dropout_prob=hidden_dropout_prob,
+            attention_probs_dropout_prob=attention_probs_dropout_prob,
         )
 
     model.resize_token_embeddings(tokenizer_embedding_size)
     return model.to(device)
 
 
-def _get_pooling_layer(pooler_name: str) -> torch.nn.Module:
-    pooling_layers = {"mean": MeanPooling, "max": MaxPooling, "gemtext": GeMTextPooling}
+def _get_pooling_layer(pooler_name: str) -> type[torch.nn.Module]:
+    pooling_layers = {
+        "context": ContextPooling,  # Hidden state of the first token (CLS)
+        "mean": MeanPooling,
+        "max": MaxPooling,
+        "gemtext": GeMTextPooling,
+    }
     if pooler_name not in pooling_layers:
         raise ValueError(f"Unknown pooling layer {pooler_name}.")
 
-    return pooling_layers[pooler_name]()
+    return pooling_layers[pooler_name]
 
 
 def get_loss_fn(name: str, num_labels: int) -> tuple[torch.nn.Module, list[str]]:
