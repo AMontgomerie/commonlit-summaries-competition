@@ -15,20 +15,15 @@ def main(oof_predictions_path: str = typer.Option(..., "--path")):
 
     for fold in predictions.prompt_id.unique():
         fold_predictions = predictions.loc[predictions.prompt_id == fold]
-        fold_mcrmse, fold_content_rmse, fold_wording_rmse = compute_metrics(fold_predictions)
-        typer.echo(
-            f"Fold {fold} | MCRMSE {fold_mcrmse} | Content {fold_content_rmse} "
-            f"| Wording {fold_wording_rmse}"
-        )
-        fold_scores.append([fold_mcrmse, fold_content_rmse, fold_wording_rmse])
+        fold_scores = compute_metrics(fold_predictions)
+        typer.echo(f"Fold {fold} | fold_scores")
+        fold_scores.append(list(fold_scores.values()))
 
     cv_score = np.mean(fold_scores, axis=0)
     typer.echo(f"CV | MCRMSE {cv_score[0]} | Content {cv_score[1]} " f"| Wording {cv_score[2]}")
 
-    oof_mcrmse, oof_content_rmse, oof_wording_rmse = compute_metrics(predictions)
-    typer.echo(
-        f"CV | MCRMSE {oof_mcrmse} | Content {oof_content_rmse} " f"| Wording {oof_wording_rmse}"
-    )
+    oof_scores = compute_metrics(predictions)
+    typer.echo(f"OOF | {oof_scores}")
 
 
 if __name__ == "__main__":
