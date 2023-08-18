@@ -1,24 +1,18 @@
 from pathlib import Path
-import torch
-from torch.nn import MSELoss, MarginRankingLoss, SmoothL1Loss
-from torch.optim import AdamW, Optimizer
-from torch.optim.lr_scheduler import LRScheduler
-from transformers import AutoModelForSequenceClassification, get_scheduler
 import typer
 import wandb
 
 from commonlit_summaries.data import PromptType, PredictionType, SummaryDataset, load_data
-from commonlit_summaries.experiment import Experiment
-from commonlit_summaries.utils import set_seed
-from commonlit_summaries.losses import RMSELoss, MCRMSELoss
-from commonlit_summaries.tokenizer import setup_tokenizer
-from commonlit_summaries.models import (
-    CommonlitRegressorModel,
-    MeanPooling,
-    MaxPooling,
-    GeMTextPooling,
-    ContextPooling,
+from commonlit_summaries.experiment import (
+    Experiment,
+    get_loss_fn,
+    get_lr_scheduler,
+    get_model,
+    get_optimizer,
 )
+from commonlit_summaries.utils import set_seed
+from commonlit_summaries.tokenizer import setup_tokenizer
+
 
 app = typer.Typer(add_completion=False)
 
@@ -126,87 +120,6 @@ def main(
         use_wandb=True,
     )
     experiment.run()
-
-
-def get_model(
-    model_checkpoint: str,
-    num_labels: int,
-    tokenizer_embedding_size: int,
-    hidden_dropout_prob: float,
-    attention_probs_dropout_prob: float,
-    pooler: str,
-    use_attention_head: bool = False,
-    device: str = "cuda",
-) -> AutoModelForSequenceClassification:
-    if pooler == "hf":
-        model = AutoModelForSequenceClassification.from_pretrained(
-            model_checkpoint,
-            num_labels=num_labels,
-            hidden_dropout_prob=hidden_dropout_prob,
-            attention_probs_dropout_prob=attention_probs_dropout_prob,
-        )
-    else:
-        pooler_layer = _get_pooling_layer(pooler)
-        model = CommonlitRegressorModel(
-            model_checkpoint,
-            num_labels,
-            pooler_layer,
-            use_attention_head,
-            hidden_dropout_prob=hidden_dropout_prob,
-            attention_probs_dropout_prob=attention_probs_dropout_prob,
-        )
-
-    model.resize_token_embeddings(tokenizer_embedding_size)
-    return model.to(device)
-
-
-def _get_pooling_layer(pooler_name: str) -> type[torch.nn.Module]:
-    pooling_layers = {
-        "context": ContextPooling,  # Hidden state of the first token (CLS)
-        "mean": MeanPooling,
-        "max": MaxPooling,
-        "gemtext": GeMTextPooling,
-    }
-    if pooler_name not in pooling_layers:
-        raise ValueError(f"Unknown pooling layer {pooler_name}.")
-
-    return pooling_layers[pooler_name]
-
-
-def get_loss_fn(name: str, num_labels: int) -> tuple[torch.nn.Module, list[str]]:
-    losses = {
-        "mse": (MSELoss, ["MSE"]),
-        "rmse": (RMSELoss, ["RMSE"]),
-        "mcrmse": (MCRMSELoss, ["MCRMSE", "C", "W"]),
-        "ranking": (MarginRankingLoss),
-        "smoothl1": (SmoothL1Loss, ["SmoothL1"]),
-    }
-
-    if name not in losses:
-        raise ValueError(f"{name} is not a valid loss function.")
-
-    loss_fn, metrics = losses[name]
-
-    if num_labels > 1 and name in ["mse", "rmse", "smoothl1"]:
-        criterion = loss_fn(reduction="mean")
-    else:
-        criterion = loss_fn()
-
-    return criterion, metrics
-
-
-def get_optimizer(
-    model: AutoModelForSequenceClassification, learning_rate: float, weight_decay: float
-) -> Optimizer:
-    return AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-
-
-def get_lr_scheduler(
-    scheduler_name: str, optimizer, warmup_proportion: float, epochs: int, steps_per_epoch: int
-) -> LRScheduler:
-    total_steps = steps_per_epoch * epochs
-    num_warmup_steps = round(total_steps * warmup_proportion)
-    return get_scheduler(scheduler_name, optimizer, num_warmup_steps, total_steps)
 
 
 if __name__ == "__main__":

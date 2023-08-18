@@ -4,6 +4,7 @@ import typer
 
 from commonlit_summaries.data import load_data, PromptType
 from commonlit_summaries.inference import Model
+from commonlit_summaries.utils import get_weights_file_path
 
 app = typer.Typer(add_completion=False)
 
@@ -46,14 +47,6 @@ def main(
 
     all_predictions = pd.concat(predictions_by_fold)
     all_predictions.to_csv(output_dir / f"{model_name}-oof.csv", index=False)
-
-
-def get_weights_file_path(fold: str, weights_dir: Path) -> Path:
-    for filename in weights_dir.iterdir():
-        if fold in str(filename) and filename.suffix == ".bin":
-            return filename.absolute()
-
-    raise FileNotFoundError(f"Couldn't find a weights file for fold {fold}.")
 
 
 if __name__ == "__main__":

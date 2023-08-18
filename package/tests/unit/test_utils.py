@@ -1,7 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from commonlit_summaries.create_oof_df import get_weights_file_path
+from commonlit_summaries.utils import get_weights_file_path
 
 
 def test_get_weights_file_path():
