@@ -6,10 +6,10 @@ from typing import Any
 
 
 class AttentionHead(torch.nn.Module):
-    def __init__(self, in_size: int, hidden_size: int = 512):
+    def __init__(self, config: PretrainedConfig):
         super().__init__()
-        self.W = torch.nn.Linear(in_size, hidden_size)
-        self.V = torch.nn.Linear(hidden_size, 1)
+        self.W = torch.nn.Linear(config.hidden_size, config.hidden_size)
+        self.V = torch.nn.Linear(config.hidden_size, 1)
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
         att = torch.tanh(self.W(features))
@@ -114,9 +114,7 @@ class CommonlitRegressorModel(torch.nn.Module):
         self.use_attention_head = use_attention_head
 
         if self.use_attention_head:
-            self.attention_head = AttentionHead(
-                in_size=config.hidden_size, hidden_size=config.hidden_size
-            )
+            self.attention_head = AttentionHead(config)
 
     def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> Output:
         transformer_output = self.transformer(input_ids, attention_mask, output_hidden_states=False)
