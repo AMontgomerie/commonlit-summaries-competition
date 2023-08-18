@@ -34,6 +34,8 @@ def test_experiment(mock_data: pd.DataFrame):
         checkpoint,
         num_labels,
         tokenizer_embedding_size=len(tokenizer),
+        hidden_dropout_prob=0.1,
+        attention_probs_dropout_prob=0.1,
         pooler="mean",
         device="cpu",
     )
@@ -97,6 +99,8 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
         checkpoint,
         num_labels,
         tokenizer_embedding_size=len(tokenizer),
+        hidden_dropout_prob=0.1,
+        attention_probs_dropout_prob=0.1,
         pooler="max",
         device="cpu",
     )
@@ -159,6 +163,8 @@ def test_experiment_no_eval(mock_data: pd.DataFrame):
         checkpoint,
         num_labels,
         tokenizer_embedding_size=len(tokenizer),
+        hidden_dropout_prob=0.1,
+        attention_probs_dropout_prob=0.1,
         pooler="mean",
         device="cpu",
     )
@@ -222,6 +228,8 @@ def test_experiment_both_mcrmse_hfhead(mock_data: pd.DataFrame):
         checkpoint,
         num_labels,
         tokenizer_embedding_size=len(tokenizer),
+        hidden_dropout_prob=0.1,
+        attention_probs_dropout_prob=0.1,
         pooler="hf",
         device="cpu",
     )
@@ -284,6 +292,8 @@ def test_experiment_both_mcrmse_gemtext(mock_data: pd.DataFrame):
         checkpoint,
         num_labels,
         tokenizer_embedding_size=len(tokenizer),
+        hidden_dropout_prob=0.0,
+        attention_probs_dropout_prob=0.0,
         pooler="gemtext",
         device="cpu",
     )
@@ -346,6 +356,8 @@ def test_experiment_both_mcrmse_attentionhead(mock_data: pd.DataFrame):
         checkpoint,
         num_labels,
         tokenizer_embedding_size=len(tokenizer),
+        hidden_dropout_prob=0.1,
+        attention_probs_dropout_prob=0.1,
         pooler="mean",
         use_attention_head=True,
         device="cpu",

@@ -10,8 +10,7 @@ def test_model_output_shape():
     checkpoint = "distilroberta-base"
     num_labels = 2
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-    pooler = MeanPooling()
-    model = CommonlitRegressorModel(checkpoint, num_labels=num_labels, pooler=pooler)
+    model = CommonlitRegressorModel(checkpoint, num_labels=num_labels, pooler_cls=MeanPooling)
     hf_model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels=num_labels)
 
     text = "This is some text used as an input to the model."
@@ -26,9 +25,8 @@ def test_model_output_shape_with_attention_head():
     checkpoint = "distilroberta-base"
     num_labels = 2
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
-    pooler = MeanPooling()
     model = CommonlitRegressorModel(
-        checkpoint, num_labels=num_labels, use_attention_head=True, pooler=pooler
+        checkpoint, num_labels=num_labels, use_attention_head=True, pooler_cls=MeanPooling
     )
     hf_model = AutoModelForSequenceClassification.from_pretrained(checkpoint, num_labels=num_labels)
 
