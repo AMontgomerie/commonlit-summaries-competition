@@ -22,6 +22,8 @@ def main(
     summariser_checkpoint: str = typer.Option("facebook/bart-large-cnn", "--summariser-checkpoint"),
     summariser_max_length: int = typer.Option(1024, "--summariser-max-length"),
     summariser_min_length: int = typer.Option(1024, "--summariser-min-length"),
+    pooler: str = typer.Option("mean", "--pooler"),
+    use_attention_head: bool = typer.Option(False, "--use-attention-head"),
     device: str = typer.Option("cuda", "--device"),
 ):
     data = load_data(
@@ -33,7 +35,14 @@ def main(
         min_length=summariser_min_length,
         device=device,
     )
-    model = Model(model_checkpoint, max_length, num_labels=2, device=device)
+    model = Model(
+        model_checkpoint,
+        max_length,
+        num_labels=2,
+        pooler=pooler,
+        use_attention_head=use_attention_head,
+        device=device,
+    )
     predictions_by_fold = []
 
     for fold in data.prompt_id.unique():

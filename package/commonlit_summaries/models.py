@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import torch
-from transformers import AutoModel, AutoConfig, PretrainedConfig
+from transformers import AutoModel, AutoConfig, PretrainedConfig, AutoModelForSequenceClassification
 from transformers.models.deberta.modeling_deberta import StableDropout, ContextPooler
 from typing import Any
 
@@ -130,3 +130,48 @@ class CommonlitRegressorModel(torch.nn.Module):
 
     def resize_token_embeddings(self, size: int) -> None:
         self.transformer.resize_token_embeddings(size)
+
+
+def get_model(
+    model_checkpoint: str,
+    num_labels: int,
+    tokenizer_embedding_size: int,
+    pooler: str,
+    hidden_dropout_prob: float = 0.1,
+    attention_probs_dropout_prob: float = 0.1,
+    use_attention_head: bool = False,
+    device: str = "cuda",
+) -> AutoModelForSequenceClassification:
+    if pooler == "hf":
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_checkpoint,
+            num_labels=num_labels,
+            hidden_dropout_prob=hidden_dropout_prob,
+            attention_probs_dropout_prob=attention_probs_dropout_prob,
+        )
+    else:
+        pooler_layer = _get_pooling_layer(pooler)
+        model = CommonlitRegressorModel(
+            model_checkpoint,
+            num_labels,
+            pooler_layer,
+            use_attention_head,
+            hidden_dropout_prob=hidden_dropout_prob,
+            attention_probs_dropout_prob=attention_probs_dropout_prob,
+        )
+
+    model.resize_token_embeddings(tokenizer_embedding_size)
+    return model.to(device)
+
+
+def _get_pooling_layer(pooler_name: str) -> type[torch.nn.Module]:
+    pooling_layers = {
+        "context": ContextPooling,  # Hidden state of the first token (CLS)
+        "mean": MeanPooling,
+        "max": MaxPooling,
+        "gemtext": GeMTextPooling,
+    }
+    if pooler_name not in pooling_layers:
+        raise ValueError(f"Unknown pooling layer {pooler_name}.")
+
+    return pooling_layers[pooler_name]

@@ -18,10 +18,12 @@ def test_predict(
     mocker: MockerFixture, mock_model_for_sequence_classification, train_data: pd.DataFrame
 ):
     mocker.patch(
-        "commonlit_summaries.inference.AutoModelForSequenceClassification.from_pretrained",
+        "commonlit_summaries.inference.get_model",
         return_value=mock_model_for_sequence_classification,
     )
-    model = Model(checkpoint="distilroberta-base", max_length=512, num_labels=2, device="cpu")
+    model = Model(
+        checkpoint="distilroberta-base", max_length=512, num_labels=2, pooler="hf", device="cpu"
+    )
     predictions = model.predict(
         train_data,
         batch_size=128,

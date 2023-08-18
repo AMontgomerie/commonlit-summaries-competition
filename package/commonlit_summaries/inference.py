@@ -4,21 +4,32 @@ from numpy import typing as npt
 from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
-from transformers import AutoModelForSequenceClassification
 
 from commonlit_summaries.data import SummaryDataset, PromptType
+from commonlit_summaries.models import get_model
 from commonlit_summaries.tokenizer import setup_tokenizer
 
 
 class Model:
-    def __init__(self, checkpoint: str, max_length: int, num_labels: int, device: str = "cuda"):
+    def __init__(
+        self,
+        checkpoint: str,
+        max_length: int,
+        num_labels: int,
+        pooler: str,
+        use_attention_head: bool = False,
+        device: str = "cuda",
+    ):
         self.device = device
         self.tokenizer = setup_tokenizer(checkpoint)
-        self.model = AutoModelForSequenceClassification.from_pretrained(
-            checkpoint, num_labels=num_labels
+        self.model = get_model(
+            checkpoint,
+            num_labels,
+            tokenizer_embedding_size=len(self.tokenizer),
+            pooler=pooler,
+            use_attention_head=use_attention_head,
+            device=device,
         )
-        self.model.resize_token_embeddings(len(self.tokenizer))
-        self.model = self.model.to(self.device)
         self.model.eval()
         self.max_length = max_length
 

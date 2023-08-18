@@ -4,13 +4,9 @@ from pathlib import Path
 import tempfile
 import torch
 
-from commonlit_summaries.experiment import (
-    Experiment,
-    get_loss_fn,
-    get_lr_scheduler,
-    get_model,
-    get_optimizer,
-)
+from commonlit_summaries.experiment import Experiment, get_lr_scheduler, get_optimizer
+from commonlit_summaries.losses import get_loss_fn
+from commonlit_summaries.models import get_model
 from commonlit_summaries.data import PromptType, PredictionType, SummaryDataset
 from commonlit_summaries.tokenizer import setup_tokenizer
 

@@ -1,4 +1,5 @@
 import torch
+from torch.nn import MSELoss, MarginRankingLoss, SmoothL1Loss
 
 
 class RMSELoss(torch.nn.Module):
@@ -32,3 +33,25 @@ class MCRMSELoss(torch.nn.Module):
         mcrmse = sum(rmse_per_column) / self.num_targets
 
         return mcrmse, *rmse_per_column
+
+
+def get_loss_fn(name: str, num_labels: int) -> tuple[torch.nn.Module, list[str]]:
+    losses = {
+        "mse": (MSELoss, ["MSE"]),
+        "rmse": (RMSELoss, ["RMSE"]),
+        "mcrmse": (MCRMSELoss, ["MCRMSE", "C", "W"]),
+        "ranking": (MarginRankingLoss),
+        "smoothl1": (SmoothL1Loss, ["SmoothL1"]),
+    }
+
+    if name not in losses:
+        raise ValueError(f"{name} is not a valid loss function.")
+
+    loss_fn, metrics = losses[name]
+
+    if num_labels > 1 and name in ["mse", "rmse", "smoothl1"]:
+        criterion = loss_fn(reduction="mean")
+    else:
+        criterion = loss_fn()
+
+    return criterion, metrics
