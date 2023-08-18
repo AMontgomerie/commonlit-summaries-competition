@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 
 
-def compute_mcrmse(predictions: pd.DataFrame, targets: pd.DataFrame) -> float:
-    content_rmse = np.sqrt(np.mean((predictions.content - targets.content) ** 2))
-    wording_rmse = np.sqrt(np.mean((predictions.wording - targets.wording) ** 2))
-    return (content_rmse + wording_rmse) / 2
+def compute_metrics(data: pd.DataFrame) -> tuple[float, float, float]:
+    content_rmse = np.sqrt(np.mean((data.content - data.predicted_content) ** 2))
+    wording_rmse = np.sqrt(np.mean((data.wording - data.predicted_wording) ** 2))
+    mcrmse = np.mean([content_rmse, wording_rmse])
+    return {"MCRMSE": mcrmse, "ContentRMSE": content_rmse, "WordingRMSE": wording_rmse}
