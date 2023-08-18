@@ -16,7 +16,7 @@ def main(oof_predictions_path: str = typer.Option(..., "--path")):
     for fold in predictions.prompt_id.unique():
         fold_predictions = predictions.loc[predictions.prompt_id == fold]
         fold_scores = compute_metrics(fold_predictions)
-        typer.echo(f"Fold {fold_scores} | fold_scores")
+        typer.echo(f"Fold {fold} | {fold_scores}")
         scores_per_fold.append(list(fold_scores.values()))
 
     cv_score = np.mean(scores_per_fold, axis=0)
