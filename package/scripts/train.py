@@ -71,6 +71,9 @@ def main(
         )
         valid_dataset = None
     else:
+        if fold not in data.prompt_id.unique():
+            raise ValueError(f"{fold} is not a valid fold.")
+
         train_data = data.loc[data.prompt_id != fold].reset_index(drop=True)
         valid_data = data.loc[data.prompt_id == fold].reset_index(drop=True)
         train_dataset = SummaryDataset(
