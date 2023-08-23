@@ -133,12 +133,14 @@ class Experiment:
             for batch in eval_loader:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
                 predictions, _ = self._forward_pass(batch, eval_loss_meter, push_metrics=False)
-                all_predictions += list(predictions.squeeze().cpu().numpy())
-                all_labels += list(batch["labels"].squeeze().cpu().numpy())
+                all_predictions += list(predictions.cpu().numpy())
+                all_labels += list(batch["labels"].cpu().numpy())
                 tepoch.set_postfix({m: eval_loss_meter[m].avg for m in self.metrics})
                 tepoch.update(1)
 
         if self.eval_fn is not None:
+            print(all_predictions)
+            print(all_labels)
             metrics = self.eval_fn(np.array(all_labels), np.array(all_predictions))
         else:
             metrics = {name: metric.avg for name, metric in eval_loss_meter.items()}
