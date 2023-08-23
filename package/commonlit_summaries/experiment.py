@@ -1,8 +1,10 @@
+import numpy as np
 import pandas as pd
 from pathlib import Path
 from tqdm import tqdm
 import torch
 from torch.cuda import amp
+from typing import Callable
 
 from torch.optim import AdamW, Optimizer
 from torch.optim.lr_scheduler import LRScheduler
@@ -32,6 +34,7 @@ class Experiment:
         accumulation_steps: int,
         save_strategy: str,
         log_interval: int,
+        eval_fn: Callable | None = None,
         dataloader_workers: int = 2,
         save_dir: Path = Path("./"),
         device: str = "cuda",
@@ -61,6 +64,7 @@ class Experiment:
         self.train_loss_meter = {m: AverageMeter() for m in metrics}
         self.log_interval = log_interval
         self.use_wandb = use_wandb
+        self.eval_fn = eval_fn
 
     def run(self) -> tuple[torch.nn.Module, list[float]]:
         """Trains with the config specified in the constructor."""
@@ -106,7 +110,9 @@ class Experiment:
 
         with tqdm(total=len(train_loader), unit="batches") as tepoch:
             for batch in train_loader:
-                loss = self._forward_pass(batch, self.train_loss_meter, push_metrics=self.use_wandb)
+                _, loss = self._forward_pass(
+                    batch, self.train_loss_meter, push_metrics=self.use_wandb
+                )
                 self._backward_pass(loss)
                 tepoch.set_postfix({m: self.train_loss_meter[m].avg for m in self.metrics})
                 tepoch.update(1)
@@ -120,22 +126,31 @@ class Experiment:
             self.eval_dataset, batch_size=self.eval_batch_size, shuffle=False
         )
         eval_loss_meter = {m: AverageMeter() for m in self.metrics}
+        all_predictions = []
+        all_labels = []
 
         with tqdm(total=len(eval_loader), unit="batches") as tepoch:
             for batch in eval_loader:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
-                self._forward_pass(batch, eval_loss_meter, push_metrics=False)
+                predictions, _ = self._forward_pass(batch, eval_loss_meter, push_metrics=False)
+                all_predictions += list(predictions.squeeze().cpu().numpy())
+                all_labels += list(batch["labels"].squeeze().cpu().numpy())
                 tepoch.set_postfix({m: eval_loss_meter[m].avg for m in self.metrics})
                 tepoch.update(1)
 
-        return {m: eval_loss_meter[m].avg for m in self.metrics}
+        if self.eval_fn is not None:
+            metrics = self.eval_fn(np.array(all_labels), np.array(all_predictions))
+        else:
+            metrics = {name: metric.avg for name, metric in eval_loss_meter.items()}
+
+        return metrics
 
     def _forward_pass(
         self,
         batch: dict[str, torch.Tensor],
         loss_meter: dict[str, AverageMeter],
         push_metrics: bool = True,
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Makes a forward pass with fp16 if cuda is available."""
         batch = {k: v.to(self.device) for k, v in batch.items()}
 
@@ -150,7 +165,7 @@ class Experiment:
             loss = losses[0] if isinstance(losses, tuple) else losses
             loss = loss / self.accumulation_steps
 
-        return loss
+        return output.logits, loss
 
     def _update_metrics(
         self,

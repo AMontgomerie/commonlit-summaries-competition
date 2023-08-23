@@ -8,6 +8,7 @@ from commonlit_summaries.losses import get_loss_fn
 from commonlit_summaries.models import get_model
 from commonlit_summaries.utils import set_seed
 from commonlit_summaries.tokenizer import setup_tokenizer
+from commonlit_summaries.metrics import compute_metrics_np
 
 
 app = typer.Typer(add_completion=False)
@@ -115,6 +116,7 @@ def main(
         save_dir=save_dir,
         accumulation_steps=accumulation_steps,
         save_strategy=save_strategy,
+        eval_fn=compute_metrics_np if prediction_type == PredictionType.both else None,
         log_interval=log_interval,
         use_wandb=True,
     )
