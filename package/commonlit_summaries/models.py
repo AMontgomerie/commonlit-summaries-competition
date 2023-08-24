@@ -164,7 +164,8 @@ def get_model(
 
     model.resize_token_embeddings(tokenizer_embedding_size)
 
-    transformer = model if pooler == "hf" else model.transformer
+    # This will break for non-deberta models with a transformers sequence classification head
+    transformer = model.deberta if pooler == "hf" else model.transformer
 
     if freeze_embeddings:
         transformer.embeddings.requires_grad_(False)
