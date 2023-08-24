@@ -81,7 +81,7 @@ class Experiment:
 
                 if self.use_wandb:
                     log_metrics = {"epoch": self.current_epoch}
-                    log_metrics.update({"eval_" + name: metric for name, metric in metrics.items()})
+                    log_metrics.update(metrics)
                     wandb.log(log_metrics, step=self.step)
 
             if self.save_strategy == "all":
@@ -139,13 +139,11 @@ class Experiment:
                 tepoch.update(1)
 
         if self.eval_fn is not None:
-            print(all_predictions)
-            print(all_labels)
             metrics = self.eval_fn(np.array(all_labels), np.array(all_predictions))
         else:
             metrics = {name: metric.avg for name, metric in eval_loss_meter.items()}
 
-        return metrics
+        return {"eval_" + name: metric for name, metric in metrics.items()}
 
     def _forward_pass(
         self,
