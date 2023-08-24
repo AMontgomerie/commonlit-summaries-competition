@@ -1,5 +1,5 @@
 import torch
-from torch.nn import MSELoss, MarginRankingLoss, SmoothL1Loss
+from torch.nn import MSELoss, MarginRankingLoss, SmoothL1Loss, HuberLoss
 
 
 class RMSELoss(torch.nn.Module):
@@ -42,6 +42,7 @@ def get_loss_fn(name: str, num_labels: int) -> tuple[torch.nn.Module, list[str]]
         "mcrmse": (MCRMSELoss, ["MCRMSE", "C", "W"]),
         "ranking": (MarginRankingLoss),
         "smoothl1": (SmoothL1Loss, ["SmoothL1"]),
+        "huber": (HuberLoss, ["Huber"]),
     }
 
     if name not in losses:
@@ -49,7 +50,7 @@ def get_loss_fn(name: str, num_labels: int) -> tuple[torch.nn.Module, list[str]]
 
     loss_fn, metrics = losses[name]
 
-    if num_labels > 1 and name in ["mse", "rmse", "smoothl1"]:
+    if num_labels > 1 and name in ["mse", "rmse", "smoothl1", "huber"]:
         criterion = loss_fn(reduction="mean")
     else:
         criterion = loss_fn()
