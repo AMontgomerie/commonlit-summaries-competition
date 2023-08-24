@@ -232,6 +232,7 @@ def test_experiment_both_mcrmse_hfhead(mock_data: pd.DataFrame):
     model = get_model(
         checkpoint,
         num_labels,
+        freeze_encoder_layers=3,
         tokenizer_embedding_size=len(tokenizer),
         hidden_dropout_prob=0.1,
         attention_probs_dropout_prob=0.1,
@@ -298,6 +299,7 @@ def test_experiment_both_mcrmse_gemtext(mock_data: pd.DataFrame):
         checkpoint,
         num_labels,
         tokenizer_embedding_size=len(tokenizer),
+        freeze_embeddings=True,
         hidden_dropout_prob=0.0,
         attention_probs_dropout_prob=0.0,
         pooler="gemtext",

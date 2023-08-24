@@ -137,6 +137,8 @@ def get_model(
     num_labels: int,
     tokenizer_embedding_size: int,
     pooler: str,
+    freeze_embeddings: bool = False,
+    freeze_encoder_layers: int = 0,
     hidden_dropout_prob: float = 0.1,
     attention_probs_dropout_prob: float = 0.1,
     use_attention_head: bool = False,
@@ -161,7 +163,28 @@ def get_model(
         )
 
     model.resize_token_embeddings(tokenizer_embedding_size)
+
+    transformer = model if pooler == "hf" else model.transformer
+
+    if freeze_embeddings:
+        transformer.embeddings.requires_grad_(False)
+
+    if freeze_encoder_layers > 0:
+        _freeze_encoder_layers(transformer, num_layers=freeze_encoder_layers)
+
     return model.to(device)
+
+
+def _freeze_encoder_layers(model: torch.nn.Module, num_layers: int) -> None:
+    """Borrowed from
+    https://www.kaggle.com/competitions/commonlit-evaluate-student-summaries/discussion/433754#2405543
+    """
+
+    for name, param in model.base_model.encoder.layer.named_parameters():
+        layer = int(name.split(".")[0])
+
+        if layer < num_layers:
+            param.requires_grad = False
 
 
 def _get_pooling_layer(pooler_name: str) -> type[torch.nn.Module]:

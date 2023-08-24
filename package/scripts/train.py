@@ -44,6 +44,8 @@ def main(
     use_attention_head: bool = typer.Option(False, "--use-attention-head"),
     hidden_dropout_prob: float = typer.Option(0.1, "--hidden-dropout"),
     attention_probs_dropout_prob: float = typer.Option(0.1, "--attention-dropout"),
+    freeze_embeddings: bool = typer.Option(False, "--freeze-embeddings"),
+    n_freeze_encoder_layers: int = typer.Option(0, "--n-freeze-encoder-layers"),
 ):
     wandb.login()
     wandb.init(
@@ -94,6 +96,8 @@ def main(
         attention_probs_dropout_prob=attention_probs_dropout_prob,
         pooler=pooler,
         use_attention_head=use_attention_head,
+        freeze_embeddings=freeze_embeddings,
+        freeze_encoder_layers=n_freeze_encoder_layers,
         device="cuda",
     )
     optimizer = get_optimizer(model, learning_rate, weight_decay)
