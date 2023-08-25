@@ -163,9 +163,7 @@ def get_model(
         )
 
     model.resize_token_embeddings(tokenizer_embedding_size)
-
-    # This will break for non-deberta models with a transformers sequence classification head
-    transformer = model.deberta if pooler == "hf" else model.transformer
+    transformer = _get_transformer(model)
 
     if freeze_embeddings:
         transformer.embeddings.requires_grad_(False)
@@ -174,6 +172,20 @@ def get_model(
         _freeze_encoder_layers(transformer, num_layers=freeze_encoder_layers)
 
     return model.to(device)
+
+
+def _get_transformer(model: torch.nn.Module) -> torch.nn.Module:
+    """Awkward method to extract the transformer network without the regression head. Works with
+    `CommonlitRegressorModel` and Deberta or Roberta models from the transformers library. Other
+    models will need to be explicitly supported.
+    """
+    if hasattr(model, "transformer"):
+        return model.transformer
+    elif hasattr(model, "deberta"):
+        return model.deberta
+    elif hasattr(model, "roberta"):
+        return model.roberta
+    raise ValueError("Unable to find base transformer in model.")
 
 
 def _freeze_encoder_layers(model: torch.nn.Module, num_layers: int) -> None:
