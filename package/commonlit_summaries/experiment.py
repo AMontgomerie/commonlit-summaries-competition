@@ -178,7 +178,7 @@ class Experiment:
         if len(self.metrics) == 1:
             metrics = {self.metrics[0]: losses}
         else:
-            metrics = {m: l for m, l in zip(self.metrics, losses)}
+            metrics = {m: loss for m, loss in zip(self.metrics, losses)}
 
         # Update local metrics
         for metric, loss in metrics.items():

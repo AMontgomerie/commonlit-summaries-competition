@@ -21,14 +21,7 @@ exclude = ["tests"]
 mlops = ["settings.toml"]
 
 [project.optional-dependencies]
-dev = [
-    "pytest",
-    "pytest-cov",
-    "pytest-mock",
-    "flake8",
-    "flake8-pyproject",
-    "black",
-]
+dev = ["black", "pytest", "pytest-cov", "pytest-mock", "ruff"]
 
 [tool.black]
 exclude = '(\.eggs|\.git|build|dist)'
@@ -36,14 +29,9 @@ include = '.*(?<!version)\.pyi?$'
 line-length = 100
 target-version = ['py39']
 
-[tool.flake8]
-ignore = [
-    "E203", # whitespace before ':'
-    "W503", # Line break before binary operator
-]
-exclude = [".git", "__pycache__", "build", "dist", ".eggs"]
-max-complexity = 10
-max-line-length = 100
+
+[tool.ruff]
+line-length = 100
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
