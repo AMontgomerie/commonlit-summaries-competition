@@ -8,7 +8,7 @@ from commonlit_summaries.losses import get_loss_fn
 from commonlit_summaries.models import get_model
 from commonlit_summaries.utils import set_seed
 from commonlit_summaries.tokenizer import setup_tokenizer
-from commonlit_summaries.metrics import compute_metrics_np
+from commonlit_summaries.metrics import get_eval_fn
 
 
 app = typer.Typer(add_completion=False)
@@ -103,6 +103,7 @@ def main(
     optimizer = get_optimizer(model, learning_rate, weight_decay)
     epoch_steps = (len(train_dataset) // train_batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(scheduler_name, optimizer, warmup, epochs, epoch_steps)
+    eval_fn = get_eval_fn(prediction_type)
     experiment = Experiment(
         run_id=group_id,
         fold=fold,
@@ -120,7 +121,7 @@ def main(
         save_dir=save_dir,
         accumulation_steps=accumulation_steps,
         save_strategy=save_strategy,
-        eval_fn=compute_metrics_np if prediction_type == PredictionType.both else None,
+        eval_fn=eval_fn,
         log_interval=log_interval,
         use_wandb=True,
     )

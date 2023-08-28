@@ -158,7 +158,14 @@ class Experiment:
             output = self.model(
                 input_ids=batch["input_ids"], attention_mask=batch["attention_mask"]
             )
-            losses = self.loss_fn(output.logits, batch["labels"])
+            logits = output.logits
+
+            # If we're only predicting one target here then logits will have an extra dimension which
+            # we need to remove.
+            if len(output.logits.shape) > len(batch["labels"].shape):
+                logits = logits.squeeze()
+
+            losses = self.loss_fn(logits, batch["labels"])
             self._update_metrics(
                 loss_meter, losses, batch_size=batch["labels"].shape[0], push_metrics=push_metrics
             )

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from commonlit_summaries.metrics import compute_metrics
+from commonlit_summaries.metrics import compute_mcrmse
 
 
 def test_compute_perfect_mcrmse():
@@ -14,7 +14,7 @@ def test_compute_perfect_mcrmse():
             "predicted_wording": [0.3, 0.1, 0.75, 0.2, 0.63],
         }
     )
-    metrics = compute_metrics(predictions)
+    metrics = compute_mcrmse(predictions)
     assert metrics["MCRMSE"] == 0.0
 
 
@@ -29,5 +29,5 @@ def test_compute_mcrmse():
             "predicted_wording": [1.0, 1.0, 1.0, 1.0, 1.0],
         }
     )
-    metrics = compute_metrics(predictions)
+    metrics = compute_mcrmse(predictions)
     assert metrics["MCRMSE"] == 1.0

@@ -9,7 +9,7 @@ from commonlit_summaries.losses import get_loss_fn
 from commonlit_summaries.models import get_model
 from commonlit_summaries.data import PromptType, PredictionType, SummaryDataset
 from commonlit_summaries.tokenizer import setup_tokenizer
-from commonlit_summaries.metrics import compute_metrics_np
+from commonlit_summaries.metrics import get_eval_fn
 
 
 def test_experiment(mock_data: pd.DataFrame):
@@ -69,7 +69,7 @@ def test_experiment(mock_data: pd.DataFrame):
             dataloader_workers=0,
             use_wandb=False,
             log_interval=100,
-            eval_fn=None,
+            eval_fn=get_eval_fn(prediction_type),
         )
         model, metrics = experiment.run()
 
@@ -135,7 +135,7 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
             dataloader_workers=0,
             use_wandb=False,
             log_interval=100,
-            eval_fn=compute_metrics_np,
+            eval_fn=get_eval_fn(prediction_type),
         )
         model, metrics = experiment.run()
 
@@ -200,7 +200,7 @@ def test_experiment_no_eval(mock_data: pd.DataFrame):
             dataloader_workers=0,
             use_wandb=False,
             log_interval=100,
-            eval_fn=compute_metrics_np,
+            eval_fn=get_eval_fn(prediction_type),
         )
         model, metrics = experiment.run()
 
@@ -267,7 +267,7 @@ def test_experiment_both_mcrmse_hfhead(mock_data: pd.DataFrame):
             dataloader_workers=0,
             use_wandb=False,
             log_interval=100,
-            eval_fn=compute_metrics_np,
+            eval_fn=None,
         )
         model, metrics = experiment.run()
 
@@ -333,7 +333,7 @@ def test_experiment_both_mcrmse_gemtext(mock_data: pd.DataFrame):
             dataloader_workers=0,
             use_wandb=False,
             log_interval=100,
-            eval_fn=compute_metrics_np,
+            eval_fn=get_eval_fn(prediction_type),
         )
         model, metrics = experiment.run()
 
@@ -399,7 +399,7 @@ def test_experiment_both_mcrmse_attentionhead(mock_data: pd.DataFrame):
             dataloader_workers=0,
             use_wandb=False,
             log_interval=100,
-            eval_fn=compute_metrics_np,
+            eval_fn=get_eval_fn(prediction_type),
         )
         model, metrics = experiment.run()
 
