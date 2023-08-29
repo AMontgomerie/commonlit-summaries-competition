@@ -72,8 +72,8 @@ class SummaryDataset:
         # Determine which targets to use.
         if self.prediction_type:
             label_data = {
-                PredictionType.content: sample.content,
-                PredictionType.wording: sample.wording,
+                PredictionType.content: [sample.content],
+                PredictionType.wording: [sample.wording],
                 PredictionType.both: [sample.content, sample.wording],
             }
             label = label_data[self.prediction_type]

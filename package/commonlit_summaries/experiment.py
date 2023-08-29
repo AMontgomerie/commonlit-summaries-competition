@@ -158,21 +158,14 @@ class Experiment:
             output = self.model(
                 input_ids=batch["input_ids"], attention_mask=batch["attention_mask"]
             )
-            logits = output.logits
-
-            # If we're only predicting one target here then logits will have an extra dimension which
-            # we need to remove.
-            if len(logits.shape) > len(batch["labels"].shape):
-                logits = logits.squeeze()
-
-            losses = self.loss_fn(logits, batch["labels"])
+            losses = self.loss_fn(output.logits, batch["labels"])
             self._update_metrics(
                 loss_meter, losses, batch_size=batch["labels"].shape[0], push_metrics=push_metrics
             )
             loss = losses[0] if isinstance(losses, tuple) else losses
             loss = loss / self.accumulation_steps
 
-        return logits, loss
+        return output.logits, loss
 
     def _update_metrics(
         self,
