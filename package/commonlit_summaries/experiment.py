@@ -162,7 +162,7 @@ class Experiment:
 
             # If we're only predicting one target here then logits will have an extra dimension which
             # we need to remove.
-            if len(output.logits.shape) > len(batch["labels"].shape):
+            if len(logits.shape) > len(batch["labels"].shape):
                 logits = logits.squeeze()
 
             losses = self.loss_fn(logits, batch["labels"])
@@ -172,7 +172,7 @@ class Experiment:
             loss = losses[0] if isinstance(losses, tuple) else losses
             loss = loss / self.accumulation_steps
 
-        return output.logits, loss
+        return logits, loss
 
     def _update_metrics(
         self,
