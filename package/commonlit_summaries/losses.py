@@ -35,12 +35,36 @@ class MCRMSELoss(torch.nn.Module):
         return mcrmse, *rmse_per_column
 
 
+class TiedMarginRankingLoss(torch.nn.Module):
+    """Modified `torch.nn.MarginRankingLoss` which allows for ties.
+
+    Targets should be 0 when input1 == input2, 1 when input1 > input2, and -1 otherwise. The margin
+    is only applied to non-tied examples.
+
+    Only mean reduction is currently supported.
+    """
+
+    def __init__(self, margin: float = 0.0):
+        super().__init__()
+        self.margin = margin
+
+    def forward(
+        self, input1: torch.Tensor, input2: torch.Tensor, target: torch.Tensor
+    ) -> torch.Tensor:
+        elementwise_loss = torch.where(
+            target == 0,
+            torch.abs(input1 - input2),
+            torch.clamp_min(-target * (input1 - input2) + self.margin, 0),
+        )
+        return torch.mean(elementwise_loss)
+
+
 def get_loss_fn(name: str, num_labels: int) -> tuple[torch.nn.Module, list[str]]:
     losses = {
         "mse": (MSELoss, ["MSE"]),
         "rmse": (RMSELoss, ["RMSE"]),
         "mcrmse": (MCRMSELoss, ["MCRMSE", "C", "W"]),
-        "ranking": (MarginRankingLoss),
+        "ranking": (TiedMarginRankingLoss, ["Ranking"]),
         "smoothl1": (SmoothL1Loss, ["SmoothL1"]),
         "huber": (HuberLoss, ["Huber"]),
     }
