@@ -2,8 +2,19 @@ from pathlib import Path
 import typer
 import wandb
 
-from commonlit_summaries.data import PromptType, PredictionType, SummaryDataset, load_data
-from commonlit_summaries.experiment import Experiment, get_lr_scheduler, get_optimizer
+from commonlit_summaries.data import (
+    PromptType,
+    PredictionType,
+    SummaryDataset,
+    SummaryRankingDataset,
+    load_data,
+)
+from commonlit_summaries.experiment import (
+    Experiment,
+    RankingExperiment,
+    get_lr_scheduler,
+    get_optimizer,
+)
 from commonlit_summaries.losses import get_loss_fn
 from commonlit_summaries.models import get_model
 from commonlit_summaries.utils import set_seed
@@ -79,11 +90,13 @@ def main(
 
         train_data = data.loc[data.prompt_id != fold].reset_index(drop=True)
         valid_data = data.loc[data.prompt_id == fold].reset_index(drop=True)
-        train_dataset = SummaryDataset(
-            tokenizer, train_data, prompt_types, prediction_type, fix_length=max_length
+
+        dataset_cls = SummaryRankingDataset if loss == "ranking" else SummaryDataset
+        train_dataset = dataset_cls(
+            tokenizer, train_data, prompt_types, prediction_type, fix_length=max_length, seed=seed
         )
-        valid_dataset = SummaryDataset(
-            tokenizer, valid_data, prompt_types, prediction_type, fix_length=max_length
+        valid_dataset = dataset_cls(
+            tokenizer, valid_data, prompt_types, prediction_type, fix_length=max_length, seed=seed
         )
 
     num_labels = 2 if prediction_type == PredictionType.both else 1
@@ -104,7 +117,8 @@ def main(
     epoch_steps = (len(train_dataset) // train_batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(scheduler_name, optimizer, warmup, epochs, epoch_steps)
     eval_fn = get_eval_fn(prediction_type)
-    experiment = Experiment(
+    experiment_cls = RankingExperiment if loss == "ranking" else Experiment
+    experiment = experiment_cls(
         run_id=group_id,
         fold=fold,
         loss_fn=loss_fn,
