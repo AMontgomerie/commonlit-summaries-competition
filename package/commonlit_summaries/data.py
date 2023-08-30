@@ -53,7 +53,21 @@ class SummaryDataset:
         }
         texts = [prompts[prompt_type] for prompt_type in self.prompt_types]
         text = " ".join(texts)
+        inputs = self._tokenize(text)
 
+        # Determine which targets to use.
+        if self.prediction_type:
+            label_data = {
+                PredictionType.content: [sample.content],
+                PredictionType.wording: [sample.wording],
+                PredictionType.both: [sample.content, sample.wording],
+            }
+            label = label_data[self.prediction_type]
+            inputs["labels"] = torch.tensor(label, dtype=torch.float32)
+
+        return inputs
+
+    def _tokenize(self, text: str) -> dict[str, torch.Tensor]:
         # If we're not using a data collator then we can do truncation, padding, and conversion to
         # tensors here.
         if self.fix_length:
@@ -69,16 +83,6 @@ class SummaryDataset:
         # Otherwise just encode the sequence and leave the rest to the data collator.
         else:
             inputs = self.tokenizer(text)
-
-        # Determine which targets to use.
-        if self.prediction_type:
-            label_data = {
-                PredictionType.content: [sample.content],
-                PredictionType.wording: [sample.wording],
-                PredictionType.both: [sample.content, sample.wording],
-            }
-            label = label_data[self.prediction_type]
-            inputs["labels"] = torch.tensor(label, dtype=torch.float32)
 
         return inputs
 

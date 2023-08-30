@@ -76,6 +76,8 @@ def get_loss_fn(name: str, num_labels: int) -> tuple[torch.nn.Module, list[str]]
 
     if num_labels > 1 and name in ["mse", "rmse", "smoothl1", "huber"]:
         criterion = loss_fn(reduction="mean")
+    elif name == "ranking":
+        criterion = loss_fn(margin=0.5)
     else:
         criterion = loss_fn()
 
