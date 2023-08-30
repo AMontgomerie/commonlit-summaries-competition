@@ -120,7 +120,9 @@ class Experiment:
 
     @torch.no_grad()
     def _evaluate(self) -> dict[str, float]:
-        """Evaluates the model on the `eval_dataset` provided and returns the average loss."""
+        """Evaluates the model on the `eval_dataset` provided and returns the results of `eval_fn`
+        or the average loss.
+        """
         self.model.eval()
         eval_loader = self._get_dataloader(
             self.eval_dataset, batch_size=self.eval_batch_size, shuffle=False
@@ -131,7 +133,6 @@ class Experiment:
 
         with tqdm(total=len(eval_loader), unit="batches") as tepoch:
             for batch in eval_loader:
-                batch = {k: v.to(self.device) for k, v in batch.items()}
                 predictions, _ = self._forward_pass(batch, eval_loss_meter, push_metrics=False)
                 all_predictions += list(predictions.cpu().numpy())
                 all_labels += list(batch["labels"].cpu().numpy())
@@ -231,11 +232,60 @@ class RankingExperiment(Experiment):
 
     def _forward_pass(
         self,
-        batch: dict[str, torch.Tensor],
+        batch: tuple[dict[str, torch.Tensor]],
         loss_meter: dict[str, AverageMeter],
         push_metrics: bool = True,
     ) -> torch.Tensor:
-        return super()._forward_pass(batch, loss_meter, push_metrics)()
+        """Makes two forward passes and computes ranking loss.
+
+        Returns only the logits from the first forward pass for predictions. Also returns the loss.
+        """
+        input1, input2, targets = batch
+
+        with amp.autocast():
+            input1 = {k: v.to(self.device) for k, v in input1.items()}
+            output1 = self.model(
+                input_ids=input1["input_ids"], attention_mask=input1["attention_mask"]
+            )
+            input2 = {k: v.to(self.device) for k, v in input2.items()}
+            output2 = self.model(
+                input_ids=input2["input_ids"], attention_mask=input2["attention_mask"]
+            )
+            losses = self.loss_fn(output1.logits, output2.logits, targets)
+            self._update_metrics(
+                loss_meter, losses, batch_size=targets.shape[0], push_metrics=push_metrics
+            )
+            loss = losses[0] if isinstance(losses, tuple) else losses
+            loss = loss / self.accumulation_steps
+
+        return output1.logits, loss
+
+    @torch.no_grad()
+    def _evaluate(self) -> dict[str, float]:
+        """Evaluates the model on the `eval_dataset` using `eval_fn`."""
+        self.model.eval()
+        eval_loader = self._get_dataloader(
+            self.eval_dataset, batch_size=self.eval_batch_size, shuffle=False
+        )
+        all_predictions = []
+        all_labels = []
+
+        with tqdm(total=len(eval_loader), unit="batches") as tepoch:
+            for inputs, _, _ in eval_loader:
+                inputs = {k: v.to(self.device) for k, v in inputs.items()}
+                output = self.model(
+                    input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"]
+                )
+                all_predictions += list(output.logits.cpu().numpy())
+                all_labels += list(inputs["labels"].numpy())
+                tepoch.update(1)
+
+        metrics = {}
+
+        if self.eval_fn is not None:
+            metrics = self.eval_fn(np.array(all_labels), np.array(all_predictions))
+
+        return {"eval_" + name: metric for name, metric in metrics.items()}
 
 
 def get_optimizer(

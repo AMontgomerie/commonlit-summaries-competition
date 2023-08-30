@@ -3,7 +3,13 @@ from pathlib import Path
 import torch
 from transformers import AutoTokenizer
 
-from commonlit_summaries.data import SummaryDataset, PromptType, PredictionType, load_data
+from commonlit_summaries.data import (
+    SummaryDataset,
+    SummaryRankingDataset,
+    PromptType,
+    PredictionType,
+    load_data,
+)
 
 DATA_DIR = Path(__file__).parents[3] / "data"
 
@@ -39,6 +45,24 @@ def test_create_train_dataset(tokenizer: AutoTokenizer, mock_data: pd.DataFrame)
     assert isinstance(inputs["input_ids"], list)
     assert isinstance(inputs["attention_mask"], list)
     assert len(inputs["input_ids"]) == len(inputs["attention_mask"])
+
+
+def test_create_ranking_train_dataset(tokenizer: AutoTokenizer, mock_data: pd.DataFrame):
+    dataset = SummaryRankingDataset(
+        tokenizer,
+        mock_data,
+        prompt_types=[PromptType.summary],
+        prediction_type=PredictionType.content,
+        seed=666,
+    )
+    input1, input2, labels = dataset[0]
+    assert "input_ids" in input1
+    assert "attention_mask" in input1
+    assert "labels" in input1
+    assert "input_ids" in input2
+    assert "attention_mask" in input2
+    assert "labels" in input2
+    assert all(labels <= 1) and all(labels >= -1)
 
 
 def test_load_test_data():

@@ -29,6 +29,7 @@ class SummaryDataset:
         prompt_types: list[PromptType],
         prediction_type: PredictionType | None = None,
         fix_length: int | None = None,
+        seed: int = None,  # unused
     ):
         self.tokenizer = tokenizer
         self.data = data
@@ -83,11 +84,33 @@ class SummaryDataset:
 
 
 class SummaryRankingDataset(SummaryDataset):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        tokenizer: AutoTokenizer,
+        data: pd.DataFrame,
+        prompt_types: list[PromptType],
+        prediction_type: PredictionType | None = None,
+        fix_length: int | None = None,
+        seed: int = 666,
+    ):
+        super().__init__(tokenizer, data, prompt_types, prediction_type, fix_length)
+        self.index_pair = list(data.sample(frac=1.0, random_state=seed).index)
 
-    def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
-        return super().__getitem__(index)()
+    def __getitem__(
+        self, index: int
+    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor], torch.Tensor]:
+        paired_index = self.index_pair[index]
+        input1 = super().__getitem__(index)
+        input2 = super().__getitem__(paired_index)
+
+        # Label is 0 if the two targets are the same, 1 if the first target is greater, and -1 if
+        # the second target is greater.
+        labels = torch.where(
+            input1["labels"] == input2["labels"],
+            0,
+            torch.where(input1["labels"] > input2["labels"], 1, -1),
+        )
+        return input1, input2, labels
 
 
 def load_data(data_dir: Path, train: bool = True, summarise: bool = False, **summarizer_kwargs):
