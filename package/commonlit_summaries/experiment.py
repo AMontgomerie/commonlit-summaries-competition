@@ -247,11 +247,13 @@ class RankingExperiment(Experiment):
             output1 = self.model(
                 input_ids=input1["input_ids"], attention_mask=input1["attention_mask"]
             )
+            del input1
             input2 = {k: v.to(self.device) for k, v in input2.items()}
             output2 = self.model(
                 input_ids=input2["input_ids"], attention_mask=input2["attention_mask"]
             )
-            losses = self.loss_fn(output1.logits, output2.logits, targets)
+            del input2
+            losses = self.loss_fn(output1.logits, output2.logits, targets.to(self.device))
             self._update_metrics(
                 loss_meter, losses, batch_size=targets.shape[0], push_metrics=push_metrics
             )
