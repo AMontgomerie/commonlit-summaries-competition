@@ -274,9 +274,9 @@ class RankingExperiment(Experiment):
 
         with tqdm(total=len(eval_loader), unit="batches") as tepoch:
             for inputs, _, _ in eval_loader:
-                inputs = {k: v.to(self.device) for k, v in inputs.items()}
                 output = self.model(
-                    input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"]
+                    input_ids=inputs["input_ids"].to(self.device),
+                    attention_mask=inputs["attention_mask"].to(self.device),
                 )
                 all_predictions += list(output.logits.cpu().numpy())
                 all_labels += list(inputs["labels"].numpy())
