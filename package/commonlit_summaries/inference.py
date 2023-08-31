@@ -59,7 +59,9 @@ class Model:
         with tqdm(total=len(dataloader), unit="batches") as tepoch:
             for batch in dataloader:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
-                output = self.model(**batch)
+                output = self.model(
+                    input_ids=batch["input_ids"], attention_mask=batch["attention_mask"]
+                )
                 predictions += list(output.logits.squeeze().cpu().numpy())
                 tepoch.update(1)
 

@@ -77,6 +77,7 @@ class SummaryDataset:
                 max_length=self.fix_length,
                 padding="max_length",
                 return_tensors="pt",
+                return_token_type_ids=False,
             )
             inputs = {k: v.squeeze(dim=0) for k, v in inputs.items()}
 
