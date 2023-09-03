@@ -7,6 +7,7 @@ name = "commonlit_summaries"
 version = "1.0"
 dependencies = [
     "pandas",
+    "peft",
     "sentencepiece",
     "torch",
     "transformers",
