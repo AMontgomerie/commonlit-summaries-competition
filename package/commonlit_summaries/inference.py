@@ -5,7 +5,7 @@ from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
 
-from commonlit_summaries.data import SummaryDataset, PromptType
+from commonlit_summaries.data import SummaryDataset, PromptType, get_collate_fn
 from commonlit_summaries.models import get_model
 from commonlit_summaries.tokenizer import setup_tokenizer
 
@@ -46,13 +46,17 @@ class Model:
         prompt_types: list[PromptType] | None = None,
         dataloader_num_workers: int = 2,
     ) -> npt.NDArray:
-        dataset = SummaryDataset(self.tokenizer, data, prompt_types, fix_length=self.max_length)
+        dataset = SummaryDataset(
+            self.tokenizer, data, prompt_types, max_length=self.max_length, pad=False
+        )
+        collate_fn = get_collate_fn(self.tokenizer, max_length=self.max_length)
         dataloader = DataLoader(
             dataset,
             batch_size=batch_size,
             shuffle=False,
             num_workers=dataloader_num_workers,
             pin_memory=True,
+            collate_fn=collate_fn,
         )
         predictions = []
 

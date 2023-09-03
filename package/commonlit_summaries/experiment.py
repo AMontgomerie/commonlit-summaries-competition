@@ -34,6 +34,7 @@ class Experiment:
         accumulation_steps: int,
         save_strategy: str,
         log_interval: int,
+        collate_fn: Callable | None = None,
         eval_fn: Callable | None = None,
         dataloader_workers: int = 2,
         save_dir: Path = Path("./"),
@@ -65,6 +66,7 @@ class Experiment:
         self.log_interval = log_interval
         self.use_wandb = use_wandb
         self.eval_fn = eval_fn
+        self.collate_fn = collate_fn
 
     def run(self) -> tuple[torch.nn.Module, list[float]]:
         """Trains with the config specified in the constructor."""
@@ -154,12 +156,13 @@ class Experiment:
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """Makes a forward pass with fp16 if cuda is available."""
         batch = {k: v.to(self.device) for k, v in batch.items()}
+        labels = batch["labels"].type(torch.float32)
 
         with amp.autocast():
             output = self.model(
                 input_ids=batch["input_ids"], attention_mask=batch["attention_mask"]
             )
-            losses = self.loss_fn(output.logits, batch["labels"])
+            losses = self.loss_fn(output.logits, labels)
             self._update_metrics(
                 loss_meter, losses, batch_size=batch["labels"].shape[0], push_metrics=push_metrics
             )
@@ -213,6 +216,7 @@ class Experiment:
             shuffle=shuffle,
             num_workers=self.dataloader_num_workers,
             pin_memory=True,
+            collate_fn=self.collate_fn,
         )
 
     def _save(self) -> None:

@@ -8,6 +8,7 @@ from commonlit_summaries.data import (
     SummaryDataset,
     SummaryRankingDataset,
     load_data,
+    get_collate_fn,
 )
 from commonlit_summaries.experiment import (
     Experiment,
@@ -81,7 +82,7 @@ def main(
 
     if fold == "all":
         train_dataset = SummaryDataset(
-            tokenizer, data, prompt_types, prediction_type, fix_length=max_length
+            tokenizer, data, prompt_types, prediction_type, max_length=max_length, pad=False
         )
         valid_dataset = None
     else:
@@ -93,10 +94,22 @@ def main(
 
         dataset_cls = SummaryRankingDataset if loss == "ranking" else SummaryDataset
         train_dataset = dataset_cls(
-            tokenizer, train_data, prompt_types, prediction_type, fix_length=max_length, seed=seed
+            tokenizer,
+            train_data,
+            prompt_types,
+            prediction_type,
+            max_length=max_length,
+            pad=False,
+            seed=seed,
         )
         valid_dataset = dataset_cls(
-            tokenizer, valid_data, prompt_types, prediction_type, fix_length=max_length, seed=seed
+            tokenizer,
+            valid_data,
+            prompt_types,
+            prediction_type,
+            max_length=max_length,
+            pad=False,
+            seed=seed,
         )
 
     num_labels = 2 if prediction_type == PredictionType.both else 1
@@ -116,6 +129,7 @@ def main(
     optimizer = get_optimizer(model, learning_rate, weight_decay)
     epoch_steps = (len(train_dataset) // train_batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(scheduler_name, optimizer, warmup, epochs, epoch_steps)
+    collate_fn = get_collate_fn(tokenizer, max_length)
     eval_fn = get_eval_fn(prediction_type)
     experiment_cls = RankingExperiment if loss == "ranking" else Experiment
     experiment = experiment_cls(
@@ -135,6 +149,7 @@ def main(
         save_dir=save_dir,
         accumulation_steps=accumulation_steps,
         save_strategy=save_strategy,
+        collate_fn=collate_fn,
         eval_fn=eval_fn,
         log_interval=log_interval,
         use_wandb=True,

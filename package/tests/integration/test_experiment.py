@@ -17,6 +17,7 @@ from commonlit_summaries.data import (
     PredictionType,
     SummaryDataset,
     SummaryRankingDataset,
+    get_collate_fn,
 )
 from commonlit_summaries.tokenizer import setup_tokenizer
 from commonlit_summaries.metrics import get_eval_fn
@@ -35,7 +36,8 @@ def test_experiment(mock_data: pd.DataFrame):
         mock_data,
         prompt_types=[PromptType.summary, PromptType.question, PromptType.text],
         prediction_type=prediction_type,
-        fix_length=512,
+        max_length=512,
+        pad=False,
     )
     epochs = 2
     batch_size = 4
@@ -56,6 +58,7 @@ def test_experiment(mock_data: pd.DataFrame):
     lr_scheduler = get_lr_scheduler(
         "constant", optimizer, warmup_proportion=0, epochs=epochs, steps_per_epoch=epoch_steps
     )
+    collate_fn = get_collate_fn(tokenizer, max_length=512)
 
     with tempfile.TemporaryDirectory() as tempdir:
         experiment = Experiment(
@@ -80,6 +83,7 @@ def test_experiment(mock_data: pd.DataFrame):
             use_wandb=False,
             log_interval=100,
             eval_fn=get_eval_fn(prediction_type),
+            collate_fn=collate_fn,
         )
         model, metrics = experiment.run()
 
@@ -101,7 +105,8 @@ def test_experiment_both_mcrmse(mock_data: pd.DataFrame):
         mock_data,
         prompt_types=[PromptType.title, PromptType.summary],
         prediction_type=prediction_type,
-        fix_length=512,
+        max_length=512,
+        pad=True,
     )
     epochs = 2
     batch_size = 4
@@ -166,7 +171,8 @@ def test_experiment_no_eval(mock_data: pd.DataFrame):
         mock_data,
         prompt_types=[PromptType.title, PromptType.summary],
         prediction_type=prediction_type,
-        fix_length=512,
+        max_length=512,
+        pad=False,
     )
     epochs = 2
     batch_size = 4
@@ -187,6 +193,7 @@ def test_experiment_no_eval(mock_data: pd.DataFrame):
     lr_scheduler = get_lr_scheduler(
         "constant", optimizer, warmup_proportion=0, epochs=epochs, steps_per_epoch=epoch_steps
     )
+    collate_fn = get_collate_fn(tokenizer, max_length=512)
 
     with tempfile.TemporaryDirectory() as tempdir:
         experiment = Experiment(
@@ -211,6 +218,7 @@ def test_experiment_no_eval(mock_data: pd.DataFrame):
             use_wandb=False,
             log_interval=100,
             eval_fn=get_eval_fn(prediction_type),
+            collate_fn=collate_fn,
         )
         model, metrics = experiment.run()
 
@@ -232,7 +240,8 @@ def test_experiment_both_mcrmse_hfhead(mock_data: pd.DataFrame):
         mock_data,
         prompt_types=[PromptType.title, PromptType.summary],
         prediction_type=prediction_type,
-        fix_length=512,
+        max_length=512,
+        pad=False,
     )
     epochs = 2
     batch_size = 4
@@ -254,6 +263,7 @@ def test_experiment_both_mcrmse_hfhead(mock_data: pd.DataFrame):
     lr_scheduler = get_lr_scheduler(
         "constant", optimizer, warmup_proportion=0, epochs=epochs, steps_per_epoch=epoch_steps
     )
+    collate_fn = get_collate_fn(tokenizer, max_length=512)
 
     with tempfile.TemporaryDirectory() as tempdir:
         experiment = Experiment(
@@ -278,6 +288,7 @@ def test_experiment_both_mcrmse_hfhead(mock_data: pd.DataFrame):
             use_wandb=False,
             log_interval=100,
             eval_fn=None,
+            collate_fn=collate_fn,
         )
         model, metrics = experiment.run()
 
@@ -298,7 +309,8 @@ def test_experiment_both_mcrmse_gemtext(mock_data: pd.DataFrame):
         mock_data,
         prompt_types=[PromptType.title, PromptType.summary],
         prediction_type=prediction_type,
-        fix_length=512,
+        max_length=512,
+        pad=False,
     )
     epochs = 2
     batch_size = 4
@@ -320,6 +332,7 @@ def test_experiment_both_mcrmse_gemtext(mock_data: pd.DataFrame):
     lr_scheduler = get_lr_scheduler(
         "constant", optimizer, warmup_proportion=0, epochs=epochs, steps_per_epoch=epoch_steps
     )
+    collate_fn = get_collate_fn(tokenizer, max_length=512)
 
     with tempfile.TemporaryDirectory() as tempdir:
         experiment = Experiment(
@@ -344,6 +357,7 @@ def test_experiment_both_mcrmse_gemtext(mock_data: pd.DataFrame):
             use_wandb=False,
             log_interval=100,
             eval_fn=get_eval_fn(prediction_type),
+            collate_fn=collate_fn,
         )
         model, metrics = experiment.run()
 
@@ -363,7 +377,8 @@ def test_experiment_both_mcrmse_attentionhead(mock_data: pd.DataFrame):
         mock_data,
         prompt_types=[PromptType.title, PromptType.summary],
         prediction_type=prediction_type,
-        fix_length=512,
+        max_length=512,
+        pad=True,
     )
     epochs = 2
     batch_size = 4
@@ -428,8 +443,9 @@ def test_ranking_experiment(mock_data: pd.DataFrame):
         mock_data,
         prompt_types=[PromptType.title, PromptType.summary],
         prediction_type=prediction_type,
-        fix_length=512,
+        max_length=512,
         seed=666,
+        pad=True,
     )
     epochs = 2
     batch_size = 4

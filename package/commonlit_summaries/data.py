@@ -2,7 +2,8 @@ from enum import Enum
 import pandas as pd
 from pathlib import Path
 import torch
-from transformers import AutoTokenizer, pipeline, AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer, pipeline, AutoModelForSeq2SeqLM, DataCollatorWithPadding
+from typing import Callable
 
 from commonlit_summaries.tokenizer import SPECIAL_TOKENS
 
@@ -28,14 +29,16 @@ class SummaryDataset:
         data: pd.DataFrame,
         prompt_types: list[PromptType],
         prediction_type: PredictionType | None = None,
-        fix_length: int | None = None,
+        max_length: int | None = None,
+        pad: bool = False,
         seed: int = None,  # unused
     ):
         self.tokenizer = tokenizer
         self.data = data
         self.prompt_types = prompt_types
         self.prediction_type = prediction_type
-        self.fix_length = fix_length
+        self.max_length = max_length
+        self.pad = pad
 
     def __len__(self) -> int:
         return len(self.data)
@@ -63,27 +66,29 @@ class SummaryDataset:
                 PredictionType.both: [sample.content, sample.wording],
             }
             label = label_data[self.prediction_type]
-            inputs["labels"] = torch.tensor(label, dtype=torch.float32)
+            inputs["labels"] = torch.tensor(label, dtype=torch.float32) if self.pad else label
 
         return inputs
 
     def _tokenize(self, text: str) -> dict[str, torch.Tensor]:
-        # If we're not using a data collator then we can do truncation, padding, and conversion to
+        # If we're not using a data collator then we can do padding, and conversion to
         # tensors here.
-        if self.fix_length:
+        if self.pad:
             inputs = self.tokenizer(
                 text,
                 truncation=True,
-                max_length=self.fix_length,
+                max_length=self.max_length,
                 padding="max_length",
                 return_tensors="pt",
                 return_token_type_ids=False,
             )
             inputs = {k: v.squeeze(dim=0) for k, v in inputs.items()}
 
-        # Otherwise just encode the sequence and leave the rest to the data collator.
+        # Otherwise just encode the sequence and truncate, the rest will be handled by the collator.
         else:
-            inputs = self.tokenizer(text)
+            inputs = self.tokenizer(
+                text, truncation=True, max_length=self.max_length, return_token_type_ids=False
+            )
 
         return inputs
 
@@ -95,10 +100,11 @@ class SummaryRankingDataset(SummaryDataset):
         data: pd.DataFrame,
         prompt_types: list[PromptType],
         prediction_type: PredictionType | None = None,
-        fix_length: int | None = None,
+        max_length: int | None = None,
+        pad: bool = False,
         seed: int = 666,
     ):
-        super().__init__(tokenizer, data, prompt_types, prediction_type, fix_length)
+        super().__init__(tokenizer, data, prompt_types, prediction_type, max_length, pad)
         self.index_pair = list(data.sample(frac=1.0, random_state=seed).index)
 
     def __getitem__(
@@ -186,3 +192,9 @@ def generate_summaries(
             summaries.append(summary["summary_text"])
 
     return summaries
+
+
+def get_collate_fn(tokenizer: AutoTokenizer, max_length: int) -> Callable:
+    return DataCollatorWithPadding(
+        tokenizer, padding=True, max_length=max_length, return_tensors="pt"
+    )
