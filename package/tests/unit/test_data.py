@@ -66,7 +66,7 @@ def test_create_ranking_train_dataset(tokenizer: AutoTokenizer, mock_data: pd.Da
     assert "attention_mask" in input2
     assert "labels" in input2
     assert all(labels <= 1) and all(labels >= -1)
-    assert not input1["input_ids"].eq(input2["input_ids"])
+    assert not input1["input_ids"].equal(input2["input_ids"])
 
 
 def test_load_test_data():

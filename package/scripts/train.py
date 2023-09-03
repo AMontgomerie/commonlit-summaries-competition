@@ -58,6 +58,10 @@ def main(
     attention_probs_dropout_prob: float = typer.Option(0.1, "--attention-dropout"),
     freeze_embeddings: bool = typer.Option(False, "--freeze-embeddings"),
     n_freeze_encoder_layers: int = typer.Option(0, "--n-freeze-encoder-layers"),
+    use_lora: bool = typer.Option(False, "--use-lora"),
+    lora_r: int = typer.Option(8, "--lora-r"),
+    lora_alpha: int = typer.Option(16, "--lora-alpha"),
+    lora_dropout: float = typer.Option(0.1, "--lora-dropout"),
 ):
     wandb.login()
     wandb.init(
@@ -124,6 +128,10 @@ def main(
         use_attention_head=use_attention_head,
         freeze_embeddings=freeze_embeddings,
         freeze_encoder_layers=n_freeze_encoder_layers,
+        use_lora=use_lora,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        lora_dropout=lora_dropout,
         device="cuda",
     )
     optimizer = get_optimizer(model, learning_rate, weight_decay)
@@ -153,6 +161,7 @@ def main(
         eval_fn=eval_fn,
         log_interval=log_interval,
         use_wandb=True,
+        use_lora=use_lora,
     )
     experiment.run()
 

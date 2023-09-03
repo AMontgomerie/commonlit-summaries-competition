@@ -40,6 +40,7 @@ class Experiment:
         save_dir: Path = Path("./"),
         device: str = "cuda",
         use_wandb: bool = True,
+        use_lora: bool = False,
     ):
         self.run_id = run_id
         self.device = device
@@ -67,6 +68,7 @@ class Experiment:
         self.use_wandb = use_wandb
         self.eval_fn = eval_fn
         self.collate_fn = collate_fn
+        self.use_lora = use_lora
 
     def run(self) -> tuple[torch.nn.Module, list[float]]:
         """Trains with the config specified in the constructor."""
@@ -220,14 +222,18 @@ class Experiment:
         )
 
     def _save(self) -> None:
-        model_name = self.model_name.replace("/", "_")
-        strategies = {
-            "all": f"{self.run_id}-{model_name}-{self.fold}-epoch{self.current_epoch}.bin",
-            "last": f"{self.run_id}-{model_name}-{self.fold}.bin",
-        }
-        file_name = strategies[self.save_strategy]
-        save_path = self.save_dir / file_name
-        torch.save(self.model.state_dict(), save_path)
+        if self.use_lora:
+            save_path = self.save_dir / self.fold
+            self.model.save_pretrained(save_path)
+        else:
+            model_name = self.model_name.replace("/", "_")
+            strategies = {
+                "all": f"{self.run_id}-{model_name}-{self.fold}-epoch{self.current_epoch}.bin",
+                "last": f"{self.run_id}-{model_name}-{self.fold}.bin",
+            }
+            file_name = strategies[self.save_strategy]
+            save_path = self.save_dir / file_name
+            torch.save(self.model.state_dict(), save_path)
 
 
 class RankingExperiment(Experiment):

@@ -1,4 +1,14 @@
 from dataclasses import dataclass
+from peft import (
+    get_peft_config,
+    get_peft_model,
+    get_peft_model_state_dict,
+    set_peft_model_state_dict,
+    LoraConfig,
+    PeftType,
+    PrefixTuningConfig,
+    PromptEncoderConfig,
+)
 import torch
 from transformers import AutoModel, AutoConfig, PretrainedConfig, AutoModelForSequenceClassification
 from transformers.models.deberta.modeling_deberta import StableDropout, ContextPooler
@@ -142,6 +152,10 @@ def get_model(
     hidden_dropout_prob: float = 0.1,
     attention_probs_dropout_prob: float = 0.1,
     use_attention_head: bool = False,
+    use_lora: bool = False,
+    lora_r: int = 8,
+    lora_alpha: int = 16,
+    lora_dropout: float = 0.1,
     device: str = "cuda",
 ) -> AutoModelForSequenceClassification:
     if pooler == "hf":
@@ -170,6 +184,17 @@ def get_model(
 
     if freeze_encoder_layers > 0:
         _freeze_encoder_layers(transformer, num_layers=freeze_encoder_layers)
+
+    if use_lora:
+        peft_config = LoraConfig(
+            task_type="SEQ_CLS",
+            inference_mode=False,
+            r=lora_r,
+            lora_alpha=lora_alpha,
+            lora_dropout=lora_dropout,
+            # target_modules=["query_proj", "key_proj", "value_proj", "dense"],
+        )
+        model = get_peft_model(model, peft_config)
 
     return model.to(device)
 
