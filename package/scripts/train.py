@@ -62,6 +62,7 @@ def main(
     lora_r: int = typer.Option(8, "--lora-r"),
     lora_alpha: int = typer.Option(16, "--lora-alpha"),
     lora_dropout: float = typer.Option(0.1, "--lora-dropout"),
+    use_gradient_checkpointing: bool = typer.Option(False, "--use-gradient-checkpointing"),
 ):
     wandb.login()
     wandb.init(
@@ -128,6 +129,7 @@ def main(
         use_attention_head=use_attention_head,
         freeze_embeddings=freeze_embeddings,
         freeze_encoder_layers=n_freeze_encoder_layers,
+        use_gradient_checkpointing=use_gradient_checkpointing,
         use_lora=use_lora,
         lora_r=lora_r,
         lora_alpha=lora_alpha,

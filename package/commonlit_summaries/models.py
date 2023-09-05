@@ -1,16 +1,13 @@
 from dataclasses import dataclass
-from peft import (
-    get_peft_config,
-    get_peft_model,
-    get_peft_model_state_dict,
-    set_peft_model_state_dict,
-    LoraConfig,
-    PeftType,
-    PrefixTuningConfig,
-    PromptEncoderConfig,
-)
+from peft import get_peft_model, LoraConfig
 import torch
-from transformers import AutoModel, AutoConfig, PretrainedConfig, AutoModelForSequenceClassification
+from transformers import (
+    AutoModel,
+    AutoConfig,
+    PretrainedConfig,
+    PreTrainedModel,
+    AutoModelForSequenceClassification,
+)
 from transformers.models.deberta.modeling_deberta import StableDropout, ContextPooler
 from typing import Any
 
@@ -152,6 +149,7 @@ def get_model(
     hidden_dropout_prob: float = 0.1,
     attention_probs_dropout_prob: float = 0.1,
     use_attention_head: bool = False,
+    use_gradient_checkpointing: bool = False,
     use_lora: bool = False,
     lora_r: int = 8,
     lora_alpha: int = 16,
@@ -179,6 +177,9 @@ def get_model(
     model.resize_token_embeddings(tokenizer_embedding_size)
     transformer = _get_transformer(model)
 
+    if use_gradient_checkpointing:
+        transformer.gradient_checkpointing_enable()
+
     if freeze_embeddings:
         transformer.embeddings.requires_grad_(False)
 
@@ -199,7 +200,7 @@ def get_model(
     return model.to(device)
 
 
-def _get_transformer(model: torch.nn.Module) -> torch.nn.Module:
+def _get_transformer(model: torch.nn.Module) -> PreTrainedModel:
     """Awkward method to extract the transformer network without the regression head. Works with
     `CommonlitRegressorModel` and Deberta or Roberta models from the transformers library. Other
     models will need to be explicitly supported.
