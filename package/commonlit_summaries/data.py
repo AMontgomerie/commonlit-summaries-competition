@@ -76,7 +76,7 @@ class SummaryDataset:
         if self.pad:
             inputs = self.tokenizer(
                 text,
-                truncation="max_length",
+                truncation="longest_first",
                 max_length=self.max_length,
                 padding="max_length",
                 return_tensors="pt",
@@ -88,7 +88,7 @@ class SummaryDataset:
         else:
             inputs = self.tokenizer(
                 text,
-                truncation="max_length",
+                truncation="longest_first",
                 max_length=self.max_length,
                 return_token_type_ids=False,
             )
