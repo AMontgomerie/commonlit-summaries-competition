@@ -76,7 +76,7 @@ class SummaryDataset:
         if self.pad:
             inputs = self.tokenizer(
                 text,
-                truncation=True,
+                truncation="max_length",
                 max_length=self.max_length,
                 padding="max_length",
                 return_tensors="pt",
@@ -87,7 +87,10 @@ class SummaryDataset:
         # Otherwise just encode the sequence and truncate, the rest will be handled by the collator.
         else:
             inputs = self.tokenizer(
-                text, truncation=True, max_length=self.max_length, return_token_type_ids=False
+                text,
+                truncation="max_length",
+                max_length=self.max_length,
+                return_token_type_ids=False,
             )
 
         return inputs
