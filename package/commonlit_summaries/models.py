@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from peft import get_peft_model, LoraConfig
 import torch
 from transformers import (
     AutoModel,
@@ -187,6 +186,8 @@ def get_model(
         _freeze_encoder_layers(transformer, num_layers=freeze_encoder_layers)
 
     if use_lora:
+        from peft import get_peft_model, LoraConfig
+
         peft_config = LoraConfig(
             task_type="SEQ_CLS",
             inference_mode=False,
