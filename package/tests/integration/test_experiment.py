@@ -83,7 +83,8 @@ def test_experiment(mock_data: pd.DataFrame):
             use_wandb=False,
             log_interval=100,
             eval_fn=get_eval_fn(prediction_type),
-            collate_fn=collate_fn,
+            train_collate_fn=collate_fn,
+            eval_collate_fn=collate_fn,
         )
         model, metrics = experiment.run()
 
@@ -218,7 +219,8 @@ def test_experiment_no_eval(mock_data: pd.DataFrame):
             use_wandb=False,
             log_interval=100,
             eval_fn=get_eval_fn(prediction_type),
-            collate_fn=collate_fn,
+            train_collate_fn=collate_fn,
+            eval_collate_fn=collate_fn,
         )
         model, metrics = experiment.run()
 
@@ -288,7 +290,8 @@ def test_experiment_both_mcrmse_hfhead(mock_data: pd.DataFrame):
             use_wandb=False,
             log_interval=100,
             eval_fn=None,
-            collate_fn=collate_fn,
+            train_collate_fn=collate_fn,
+            eval_collate_fn=collate_fn,
         )
         model, metrics = experiment.run()
 
@@ -357,7 +360,8 @@ def test_experiment_both_mcrmse_gemtext(mock_data: pd.DataFrame):
             use_wandb=False,
             log_interval=100,
             eval_fn=get_eval_fn(prediction_type),
-            collate_fn=collate_fn,
+            train_collate_fn=collate_fn,
+            eval_collate_fn=collate_fn,
         )
         model, metrics = experiment.run()
 

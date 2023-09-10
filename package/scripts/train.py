@@ -35,7 +35,8 @@ def main(
     model_name: str = typer.Option(..., "--name"),
     model_checkpoint: str = typer.Option(..., "--checkpoint"),
     data_dir: Path = typer.Option("./", "--data-dir"),
-    max_length: int = typer.Option(512, "--max-length"),
+    train_max_length: int = typer.Option(512, "--max-length"),
+    inference_max_length: int = typer.Option(512, "--inference-max-length"),
     learning_rate: float = typer.Option(1e-5, "--learning-rate"),
     train_batch_size: int = typer.Option(32, "--train-batch-size"),
     valid_batch_size: int = typer.Option(128, "--valid-batch-size"),
@@ -87,7 +88,7 @@ def main(
 
     if fold == "all":
         train_dataset = SummaryDataset(
-            tokenizer, data, prompt_types, prediction_type, max_length=max_length, pad=False
+            tokenizer, data, prompt_types, prediction_type, max_length=train_max_length, pad=False
         )
         valid_dataset = None
     else:
@@ -103,7 +104,7 @@ def main(
             train_data,
             prompt_types,
             prediction_type,
-            max_length=max_length,
+            max_length=train_max_length,
             pad=False,
             seed=seed,
         )
@@ -112,7 +113,7 @@ def main(
             valid_data,
             prompt_types,
             prediction_type,
-            max_length=max_length,
+            max_length=inference_max_length,
             pad=False,
             seed=seed,
         )
@@ -139,7 +140,8 @@ def main(
     optimizer = get_optimizer(model, learning_rate, weight_decay)
     epoch_steps = (len(train_dataset) // train_batch_size) // accumulation_steps
     lr_scheduler = get_lr_scheduler(scheduler_name, optimizer, warmup, epochs, epoch_steps)
-    collate_fn = get_collate_fn(tokenizer, max_length)
+    train_collate_fn = get_collate_fn(tokenizer, train_max_length)
+    eval_collate_fn = get_collate_fn(tokenizer, inference_max_length)
     eval_fn = get_eval_fn(prediction_type)
     experiment_cls = RankingExperiment if loss == "ranking" else Experiment
     experiment = experiment_cls(
@@ -159,7 +161,8 @@ def main(
         save_dir=save_dir,
         accumulation_steps=accumulation_steps,
         save_strategy=save_strategy,
-        collate_fn=collate_fn,
+        train_collate_fn=train_collate_fn,
+        eval_collate_fn=eval_collate_fn,
         eval_fn=eval_fn,
         log_interval=log_interval,
         use_wandb=True,

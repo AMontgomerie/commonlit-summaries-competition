@@ -34,7 +34,8 @@ class Experiment:
         accumulation_steps: int,
         save_strategy: str,
         log_interval: int,
-        collate_fn: Callable | None = None,
+        train_collate_fn: Callable | None = None,
+        eval_collate_fn: Callable | None = None,
         eval_fn: Callable | None = None,
         dataloader_workers: int = 2,
         save_dir: Path = Path("./"),
@@ -67,7 +68,8 @@ class Experiment:
         self.log_interval = log_interval
         self.use_wandb = use_wandb
         self.eval_fn = eval_fn
-        self.collate_fn = collate_fn
+        self.train_collate_fn = train_collate_fn
+        self.eval_collate_fn = eval_collate_fn
         self.use_lora = use_lora
 
     def run(self) -> tuple[torch.nn.Module, list[float]]:
@@ -109,7 +111,10 @@ class Experiment:
             metric.reset()
 
         train_loader = self._get_dataloader(
-            self.train_dataset, batch_size=self.train_batch_size, shuffle=True
+            self.train_dataset,
+            batch_size=self.train_batch_size,
+            shuffle=True,
+            collate_fn=self.train_collate_fn,
         )
 
         with tqdm(total=len(train_loader), unit="batches") as tepoch:
@@ -129,7 +134,10 @@ class Experiment:
         """
         self.model.eval()
         eval_loader = self._get_dataloader(
-            self.eval_dataset, batch_size=self.eval_batch_size, shuffle=False
+            self.eval_dataset,
+            batch_size=self.eval_batch_size,
+            shuffle=False,
+            collate_fn=self.eval_collate_fn,
         )
         eval_loss_meter = {m: AverageMeter() for m in self.metrics}
         all_predictions = []
@@ -210,7 +218,11 @@ class Experiment:
             self.optimizer.zero_grad(set_to_none=True)
 
     def _get_dataloader(
-        self, dataset: Dataset, batch_size: int, shuffle: bool = False
+        self,
+        dataset: Dataset,
+        batch_size: int,
+        shuffle: bool = False,
+        collate_fn: Callable | None = None,
     ) -> DataLoader:
         return DataLoader(
             dataset,
@@ -218,7 +230,7 @@ class Experiment:
             shuffle=shuffle,
             num_workers=self.dataloader_num_workers,
             pin_memory=True,
-            collate_fn=self.collate_fn,
+            collate_fn=collate_fn,
         )
 
     def _save(self) -> None:
@@ -277,7 +289,10 @@ class RankingExperiment(Experiment):
         """Evaluates the model on the `eval_dataset` using `eval_fn`."""
         self.model.eval()
         eval_loader = self._get_dataloader(
-            self.eval_dataset, batch_size=self.eval_batch_size, shuffle=False
+            self.eval_dataset,
+            batch_size=self.eval_batch_size,
+            shuffle=False,
+            collate_fn=self.eval_collate_fn,
         )
         all_predictions = []
         all_labels = []
