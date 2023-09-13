@@ -14,6 +14,7 @@ app = typer.Typer(add_completion=False)
 def main(
     prompt_types: list[PromptType] = typer.Option(..., "--prompt-type"),
     model_checkpoint: str = typer.Option(..., "--checkpoint"),
+    model_name: str = typer.Option(..., "--name"),
     weights_dir: Path = typer.Option(..., "--weights-dir"),
     data_dir: Path = typer.Option("./", "--data-dir"),
     output_dir: Path = typer.Option("./", "--output-dir"),
@@ -60,8 +61,7 @@ def main(
             "wording": mean_predictions[:, 1],
         }
     )
-    output_filename = model_checkpoint.replace("/", "-")
-    predictions_df.to_csv(output_dir / f"{output_filename}-submission.csv", index=False)
+    predictions_df.to_csv(output_dir / f"{model_name}.csv", index=False)
 
 
 if __name__ == "__main__":
