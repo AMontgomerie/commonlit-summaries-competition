@@ -64,6 +64,7 @@ def main(
     lora_alpha: int = typer.Option(16, "--lora-alpha"),
     lora_dropout: float = typer.Option(0.1, "--lora-dropout"),
     use_gradient_checkpointing: bool = typer.Option(False, "--use-gradient-checkpointing"),
+    loss_threshold: float = typer.Option(1.0, "--loss-threshold"),
 ):
     wandb.login()
     wandb.init(
@@ -119,7 +120,7 @@ def main(
         )
 
     num_labels = 2 if prediction_type == PredictionType.both else 1
-    loss_fn, metrics = get_loss_fn(loss, num_labels)
+    loss_fn, metrics = get_loss_fn(loss, num_labels, loss_threshold)
     model = get_model(
         model_checkpoint,
         num_labels,
