@@ -95,3 +95,11 @@ def test_load_train_data():
         assert column in data.columns
 
     assert len(data) > 0
+
+
+def test_load_data_with_autocorrect():
+    data = load_data(DATA_DIR, train=False, autocorrect_spelling=True)
+    for column in ["student_id", "prompt_id", "prompt_question", "prompt_text", "text"]:
+        assert column in data.columns
+
+    assert len(data) > 0

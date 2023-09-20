@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "commonlit_summaries"
 version = "1.0"
 dependencies = [
+    "autocorrect==1.1.0",
     "pandas",
     "peft",
     "sentencepiece",

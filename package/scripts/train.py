@@ -65,6 +65,7 @@ def main(
     lora_dropout: float = typer.Option(0.1, "--lora-dropout"),
     use_gradient_checkpointing: bool = typer.Option(False, "--use-gradient-checkpointing"),
     loss_threshold: float = typer.Option(1.0, "--loss-threshold"),
+    correct_spelling: bool = typer.Option(False, "--correct-spelling"),
 ):
     wandb.login()
     wandb.init(
@@ -78,6 +79,7 @@ def main(
     data = load_data(
         data_dir,
         train=True,
+        autocorrect_spelling=correct_spelling,
         summarise=PromptType.reference_summary in prompt_types,
         checkpoint=summariser_checkpoint,
         max_length=summariser_max_length,

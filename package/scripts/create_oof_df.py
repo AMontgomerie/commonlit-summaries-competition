@@ -24,11 +24,13 @@ def main(
     summariser_min_length: int = typer.Option(1024, "--summariser-min-length"),
     pooler: str = typer.Option("mean", "--pooler"),
     use_attention_head: bool = typer.Option(False, "--use-attention-head"),
+    correct_spelling: bool = typer.Option(False, "--correct-spelling"),
     device: str = typer.Option("cuda", "--device"),
 ):
     data = load_data(
         data_dir,
         train=True,
+        autocorrect_spelling=correct_spelling,
         summarise=PromptType.reference_summary in prompt_types,
         checkpoint=summariser_checkpoint,
         max_length=summariser_max_length,

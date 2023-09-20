@@ -1,9 +1,11 @@
+from autocorrect import Speller
 from enum import Enum
 import pandas as pd
 from pathlib import Path
 import torch
 from transformers import AutoTokenizer, pipeline, AutoModelForSeq2SeqLM, DataCollatorWithPadding
 from typing import Callable
+from tqdm import tqdm
 
 from commonlit_summaries.tokenizer import SPECIAL_TOKENS
 
@@ -127,7 +129,13 @@ class SummaryRankingDataset(SummaryDataset):
         return input1, input2, labels
 
 
-def load_data(data_dir: Path, train: bool = True, summarise: bool = False, **summarizer_kwargs):
+def load_data(
+    data_dir: Path,
+    train: bool = True,
+    autocorrect_spelling: bool = False,
+    summarise: bool = False,
+    **summarizer_kwargs,
+):
     split = "train" if train else "test"
     prompts = pd.read_csv(data_dir / f"prompts_{split}.csv")
     summaries = pd.read_csv(data_dir / f"summaries_{split}.csv")
@@ -156,7 +164,27 @@ def load_data(data_dir: Path, train: bool = True, summarise: bool = False, **sum
         columns += ["content", "wording"]
 
     data = data.loc[:, columns]
+
+    if autocorrect_spelling:
+        data["text"] = correct_spelling(data.text)
+
     return data
+
+
+def correct_spelling(texts: pd.Series | list[str]) -> list[str]:
+    speller = Speller()
+    corrected_texts = []
+
+    with tqdm(total=len(texts), unit="corrected-texts") as t:
+        for text in texts:
+            try:
+                corrected_text = speller(text)
+                corrected_texts.append(corrected_text)
+            except TypeError:
+                corrected_texts.append(text)
+            t.update(1)
+
+    return corrected_texts
 
 
 def generate_summaries(

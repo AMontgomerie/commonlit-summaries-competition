@@ -60,7 +60,7 @@ class TiedMarginRankingLoss(torch.nn.Module):
 
 
 def get_loss_fn(
-    name: str, num_labels: int, loss_threshold: float
+    name: str, num_labels: int, loss_threshold: float = 0.5
 ) -> tuple[torch.nn.Module, list[str]]:
     losses = {
         "mse": (MSELoss, ["MSE"]),
