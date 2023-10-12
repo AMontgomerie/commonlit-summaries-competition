@@ -20,6 +20,11 @@ python -m build package
 ```
 
 ## Run tests
+First download the test data, for example with the Kaggle API:
+```
+kaggle competitions download -c commonlit-evaluate-student-summaries
+```
+Unzip the data and place it in a directory called `data` at the top level of the repo. Then run:
 
 ```bash
 pytest package
